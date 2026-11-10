@@ -159,6 +159,23 @@ public class ScoringTests
     }
 
     [Fact]
+    public void Exports_excel_and_pdf_reports()
+    {
+        var report = Scorer.Score(new ChildInfo("Jón Jónsson", 9, Sex.Male), ToAnswers(ExampleScores()));
+        var dir = Directory.CreateTempSubdirectory();
+        var xlsx = Path.Combine(dir.FullName, "r.xlsx");
+        var pdf = Path.Combine(dir.FullName, "r.pdf");
+
+        ExcelReportWriter.Write(report, xlsx);
+        PdfReportWriter.Write(report, pdf);
+
+        using var wb = new XLWorkbook(xlsx);
+        Assert.Equal("Jón Jónsson", wb.Worksheet("Niðurstöður").Cell("B3").GetString());
+        Assert.Equal(Scales.ItemCount + 1, wb.Worksheet("Svör").LastRowUsed()!.RowNumber());
+        Assert.True(new FileInfo(pdf).Length > 10_000);
+    }
+
+    [Fact]
     public void Warns_when_rows_are_missing()
     {
         using var wb = new XLWorkbook();

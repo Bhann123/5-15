@@ -1,0 +1,332 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FimmFimmtan.App.ViewModels"
+        xmlns:c="using:FimmFimmtan.App.Controls"
+        x:Class="FimmFimmtan.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="5-15 Skorun"
+        Icon="/Assets/app.ico"
+        Width="1320" Height="860" MinWidth="980" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Page}"
+        DragDrop.AllowDrop="True">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource Brand}" Padding="24,14">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Image Source="/Assets/app.png" Width="36" Height="36" Margin="0,0,14,0" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="5-15 Skorun" FontSize="18" FontWeight="SemiBold" Foreground="White" />
+                    <TextBlock Text="Norrænn spurningalisti fyrir foreldra um þroska barns og hegðun" FontSize="12" Foreground="#B9CFE0" />
+                </StackPanel>
+                <Button Grid.Column="2" Content="Nýtt barn" Command="{Binding NewChildCommand}" VerticalAlignment="Center"
+                        Background="#1E5579" Foreground="White" Padding="14,6" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="300,*" Margin="20">
+            <!-- Left: inputs -->
+            <ScrollViewer Grid.Column="0" Margin="0,0,20,0">
+                <StackPanel Spacing="16">
+                    <Border Classes="card">
+                        <StackPanel Spacing="14">
+                            <TextBlock Classes="h2" Text="1. Upplýsingar um barn" />
+                            <StackPanel>
+                                <TextBlock Classes="label" Text="Nafn" />
+                                <TextBox Text="{Binding Name}" PlaceholderText="Nafn barns" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Classes="label" Text="Aldur (ár)" />
+                                <NumericUpDown Value="{Binding Age}" Minimum="5" Maximum="17" Increment="1" FormatString="0"
+                                               PlaceholderText="5–17" HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Classes="label" Text="Kyn" />
+                                <StackPanel Orientation="Horizontal" Spacing="18">
+                                    <RadioButton Content="Drengur" IsChecked="{Binding IsMale}" GroupName="sex" />
+                                    <RadioButton Content="Stúlka" IsChecked="{Binding IsFemale}" GroupName="sex" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="h2" Text="2. Svör foreldra" />
+                            <TextBlock Classes="muted" Text="Excel-skrá (.xlsx) þar sem svörin byrja í reit E2 og halda áfram niður dálk E, eitt svar í línu (spurning 1–181)." />
+
+                            <Border x:Name="DropZone" BorderBrush="#B8C6D6" BorderThickness="1.5" CornerRadius="8" Padding="14"
+                                    Background="#F8FAFC" IsVisible="{Binding !HasFile}">
+                                <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                    <TextBlock Text="Dragðu Excel-skrá hingað" HorizontalAlignment="Center" Foreground="{StaticResource Muted}" />
+                                    <Button Classes="primary" Content="Velja Excel-skrá…" Command="{Binding BrowseCommand}"
+                                            HorizontalAlignment="Center" Padding="16,7" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border IsVisible="{Binding HasFile}" Background="#F0F7F2" BorderBrush="#BFE0C9" BorderThickness="1"
+                                    CornerRadius="8" Padding="12">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding FileDetails}" Classes="muted" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                        <Button Content="Skipta" Command="{Binding BrowseCommand}" Padding="10,4" FontSize="12" />
+                                        <Button Content="✕" Command="{Binding ClearFileCommand}" Padding="8,4" FontSize="12"
+                                                ToolTip.Tip="Fjarlægja skrá" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsLoading}" />
+
+                            <Border IsVisible="{Binding LoadError, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    Background="{StaticResource RedSoft}" CornerRadius="8" Padding="12">
+                                <TextBlock Text="{Binding LoadError}" Foreground="{StaticResource Red}" TextWrapping="Wrap" FontSize="12" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="card">
+                        <StackPanel Spacing="12">
+                            <TextBlock Classes="h2" Text="3. Skýrsla" />
+                            <CheckBox IsChecked="{Binding IncludePositiveItems}">
+                                <TextBlock Text="Telja spurningar 110 og 111 með (jákvætt orðaðar, á sviðinu Almenn námsgeta)" TextWrapping="Wrap" FontSize="12" />
+                            </CheckBox>
+                            <Grid ColumnDefinitions="*,10,*">
+                                <Button Grid.Column="0" Classes="primary" Content="Vista PDF" Command="{Binding ExportPdfCommand}"
+                                        IsEnabled="{Binding CanExport}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,8" />
+                                <Button Grid.Column="2" Classes="secondary" Content="Vista Excel" Command="{Binding ExportExcelCommand}"
+                                        IsEnabled="{Binding CanExport}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,8" />
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <TextBlock Text="{Binding StatusMessage}" Classes="muted" VerticalAlignment="Center" MaxWidth="200" />
+                                <Button Content="Opna" Command="{Binding OpenLastExportCommand}" FontSize="12" Padding="10,3"
+                                        IsVisible="{Binding LastExportPath, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Right: results -->
+            <Border Grid.Column="1" Classes="card" Padding="0">
+                <TabControl Padding="0" Margin="8,4,8,0">
+                    <TabItem Header="Niðurstöður" FontSize="15">
+                        <Grid>
+                            <!-- Empty state -->
+                            <StackPanel IsVisible="{Binding !HasReport}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        MaxWidth="420" Spacing="10">
+                                <Image Source="/Assets/app.png" Width="64" Height="64" Opacity="0.25" />
+                                <TextBlock Text="Engar niðurstöður enn" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding MissingInputMessage}" Classes="muted" TextAlignment="Center" FontSize="13" />
+                            </StackPanel>
+
+                            <Grid IsVisible="{Binding HasReport}" RowDefinitions="Auto,Auto,Auto,*" Margin="10,6,10,0">
+                                <StackPanel Grid.Row="0" Spacing="2" Margin="0,4,0,10">
+                                    <TextBlock Text="{Binding ReportHeading}" FontSize="16" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding FlaggedSummary}" Classes="muted" FontSize="13" />
+                                </StackPanel>
+
+                                <ItemsControl Grid.Row="1" ItemsSource="{Binding Warnings}" IsVisible="{Binding HasWarnings}" Margin="0,0,0,10">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <Border Background="{StaticResource AmberSoft}" CornerRadius="6" Padding="10,6" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding}" Foreground="#78350F" TextWrapping="Wrap" FontSize="12" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Border Grid.Row="2" BorderBrush="{StaticResource CardBorder}" BorderThickness="0,0,0,1" Padding="8,6,22,6">
+                                    <Grid ColumnDefinitions="*,70,54,60,60,60,46,46,130,150">
+                                        <TextBlock Grid.Column="0" Classes="th" Text="Svið" />
+                                        <TextBlock Grid.Column="1" Classes="th" Text="Niðurstaða" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="2" Classes="th" Text="Svarað" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="3" Classes="th" Text="Miðgildi" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="4" Classes="th" Text="Meðaltal" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="5" Classes="th" Text="Staðalfr." HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="6" Classes="th" Text="90%" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="7" Classes="th" Text="98%" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="8" Classes="th" Text="Snið (0–2)" Margin="16,0,0,0" />
+                                        <TextBlock Grid.Column="9" Classes="th" Text="Mat" Margin="12,0,0,0" />
+                                    </Grid>
+                                </Border>
+
+                                <ScrollViewer Grid.Row="3">
+                                    <StackPanel Margin="0,0,14,0">
+                                        <ItemsControl ItemsSource="{Binding Results}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:ResultRow">
+                                                    <Border Padding="8,0" Height="34" BorderBrush="#EEF1F5" BorderThickness="0,0,0,1"
+                                                            Classes.domain="{Binding IsDomain}" Background="Transparent"
+                                                            ToolTip.Tip="{Binding Tooltip}">
+                                                        <Border.Styles>
+                                                            <Style Selector="Border.domain">
+                                                                <Setter Property="Background" Value="#F7F9FC" />
+                                                            </Style>
+                                                        </Border.Styles>
+                                                        <Grid ColumnDefinitions="*,70,54,60,60,60,46,46,130,150">
+                                                            <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis" FontSize="13"
+                                                                       Classes.domain="{Binding IsDomain}" Classes.sub="{Binding IsSubdomain}">
+                                                                <TextBlock.Styles>
+                                                                    <Style Selector="TextBlock.domain">
+                                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                                    </Style>
+                                                                    <Style Selector="TextBlock.sub">
+                                                                        <Setter Property="Margin" Value="18,0,0,0" />
+                                                                        <Setter Property="Foreground" Value="#334155" />
+                                                                    </Style>
+                                                                </TextBlock.Styles>
+                                                            </TextBlock>
+                                                            <TextBlock Grid.Column="1" Classes="num" Text="{Binding ScoreText}" FontWeight="SemiBold"
+                                                                       Classes.flag98="{Binding IsAbove98}" Classes.flag90="{Binding IsAbove90}">
+                                                                <TextBlock.Styles>
+                                                                    <Style Selector="TextBlock.flag98"><Setter Property="Foreground" Value="{StaticResource Red}" /></Style>
+                                                                    <Style Selector="TextBlock.flag90"><Setter Property="Foreground" Value="{StaticResource Amber}" /></Style>
+                                                                </TextBlock.Styles>
+                                                            </TextBlock>
+                                                            <TextBlock Grid.Column="2" Classes="normnum" Text="{Binding PercentText}"
+                                                                       Classes.few="{Binding FewAnswers}">
+                                                                <TextBlock.Styles>
+                                                                    <Style Selector="TextBlock.few"><Setter Property="Foreground" Value="{StaticResource Amber}" /><Setter Property="FontWeight" Value="SemiBold" /></Style>
+                                                                </TextBlock.Styles>
+                                                            </TextBlock>
+                                                            <TextBlock Grid.Column="3" Classes="normnum" Text="{Binding MedianText}" />
+                                                            <TextBlock Grid.Column="4" Classes="normnum" Text="{Binding MeanText}" />
+                                                            <TextBlock Grid.Column="5" Classes="normnum" Text="{Binding SdText}" />
+                                                            <TextBlock Grid.Column="6" Classes="normnum" Text="{Binding P90Text}" />
+                                                            <TextBlock Grid.Column="7" Classes="normnum" Text="{Binding P98Text}" />
+                                                            <c:NormBar Grid.Column="8" Result="{Binding Result}" Height="16" Margin="16,0,0,0" />
+                                                            <Border Grid.Column="9" Classes="pill" Margin="12,0,0,0"
+                                                                    Classes.p98="{Binding IsAbove98}" Classes.p90="{Binding IsAbove90}"
+                                                                    Classes.ok="{Binding IsTypical}" Classes.none="{Binding IsNotScored}">
+                                                                <Border.Styles>
+                                                                    <Style Selector="Border.p98"><Setter Property="Background" Value="{StaticResource RedSoft}" /></Style>
+                                                                    <Style Selector="Border.p98 > TextBlock"><Setter Property="Foreground" Value="{StaticResource Red}" /></Style>
+                                                                    <Style Selector="Border.p90"><Setter Property="Background" Value="{StaticResource AmberSoft}" /></Style>
+                                                                    <Style Selector="Border.p90 > TextBlock"><Setter Property="Foreground" Value="{StaticResource Amber}" /></Style>
+                                                                    <Style Selector="Border.ok"><Setter Property="Background" Value="#ECFDF3" /></Style>
+                                                                    <Style Selector="Border.ok > TextBlock"><Setter Property="Foreground" Value="{StaticResource Green}" /></Style>
+                                                                    <Style Selector="Border.none"><Setter Property="Background" Value="#F1F5F9" /></Style>
+                                                                    <Style Selector="Border.none > TextBlock"><Setter Property="Foreground" Value="{StaticResource Muted}" /></Style>
+                                                                </Border.Styles>
+                                                                <TextBlock Text="{Binding LevelShortText}" FontSize="11" FontWeight="Medium" />
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <WrapPanel Margin="8,14,8,16" Orientation="Horizontal">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,4">
+                                                <Border Width="22" Height="10" Background="#3B7CB8" CornerRadius="2" VerticalAlignment="Center" />
+                                                <TextBlock Text="Niðurstaða barns" Classes="muted" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,4">
+                                                <Border Width="2" Height="14" Background="#64748B" VerticalAlignment="Center" />
+                                                <TextBlock Text="Meðaltal viðmiðunarhóps" Classes="muted" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,4">
+                                                <Border Width="22" Height="10" Background="#FBEBC4" VerticalAlignment="Center" />
+                                                <TextBlock Text="90.–98. hundraðsmark" Classes="muted" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,4">
+                                                <Border Width="22" Height="10" Background="#F6D2CD" VerticalAlignment="Center" />
+                                                <TextBlock Text="Yfir 98. hundraðsmarki" Classes="muted" />
+                                            </StackPanel>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="{Binding AnswersTabHeader}" FontSize="15">
+                        <Grid RowDefinitions="Auto,*" Margin="10,6,10,0">
+                            <TextBlock Grid.Row="1" IsVisible="{Binding !HasFile}" Text="Hladdu inn Excel-skrá til að sjá svörin." Classes="muted"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" />
+                            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" IsVisible="{Binding HasFile}" Margin="0,4,0,8">
+                                <TextBlock Classes="muted" VerticalAlignment="Center"
+                                           Text="Berðu svörin saman við upprunalega listann til að ganga úr skugga um að röðin sé rétt." />
+                                <CheckBox Grid.Column="1" IsChecked="{Binding ShowOnlyProblemAnswers}" Content="Sýna aðeins ósvaraðar" FontSize="12" />
+                            </Grid>
+                            <ScrollViewer Grid.Row="1" IsVisible="{Binding HasFile}">
+                                <ItemsControl ItemsSource="{Binding AnswerRows}" Margin="0,0,14,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:AnswerRow">
+                                            <Border Padding="8,6" BorderBrush="#EEF1F5" BorderThickness="0,0,0,1">
+                                                <Grid ColumnDefinitions="44,*,230,40,56">
+                                                    <TextBlock Text="{Binding Item}" FontWeight="SemiBold" Foreground="{StaticResource Muted}" VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" Spacing="1" Margin="0,0,12,0">
+                                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" />
+                                                        <TextBlock Text="{Binding ScaleName}" FontSize="11" Foreground="{StaticResource Muted}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Raw}" VerticalAlignment="Center" FontSize="12" TextWrapping="Wrap"
+                                                               Classes.missing="{Binding IsMissing}" Classes.bad="{Binding IsUnrecognized}">
+                                                        <TextBlock.Styles>
+                                                            <Style Selector="TextBlock.missing"><Setter Property="Foreground" Value="{StaticResource Muted}" /><Setter Property="FontStyle" Value="Italic" /></Style>
+                                                            <Style Selector="TextBlock.bad"><Setter Property="Foreground" Value="{StaticResource Red}" /></Style>
+                                                        </TextBlock.Styles>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="3" Text="{Binding ScoreText}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Column="4" Text="{Binding Cell}" FontSize="11" Foreground="{StaticResource Muted}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Um skorunina" FontSize="15">
+                        <ScrollViewer>
+                            <StackPanel Spacing="12" Margin="14,10,14,20" MaxWidth="760" HorizontalAlignment="Left">
+                                <TextBlock Classes="h2" Text="Hvernig er skorað?" />
+                                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                           Text="Hver spurning fær stig eftir svari foreldris: „Á ekki við“ = 0, „Á stundum/að nokkru leyti við“ = 1 og „Á við“ = 2. Niðurstaða hvers undirsviðs er meðaltal stiga þeirra spurninga sem svarað var. Niðurstaða aðalsviðs (feitletrað) er meðaltal allra spurninga á sviðinu – ekki meðaltal undirsviðanna. Ósvaraðar spurningar og „óviðkomandi“ teljast ekki með; dálkurinn „Svarað“ sýnir hlutfall svaraðra spurninga." />
+                                <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                           Text="Niðurstaðan er borin saman við viðmiðunarhóp eftir aldri (5–7, 8–11, 12–15, 16–17 ára) og kyni. Taflan sýnir miðgildi, meðaltal og staðalfrávik hópsins og þau gildi sem 90% og 98% barna í hópnum eru undir. Niðurstaða við eða yfir 90. hundraðsmarki er merkt gul og við eða yfir 98. hundraðsmarki rauð. Með því að halda músinni yfir línu sést z-gildi, þ.e. hve mörgum staðalfrávikum niðurstaðan er frá meðaltali." />
+                                <TextBlock Classes="h2" Text="Spurningar á hverju sviði" Margin="0,8,0,0" />
+                                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                                    <Grid.Styles>
+                                        <Style Selector="TextBlock"><Setter Property="FontSize" Value="13" /><Setter Property="Margin" Value="0,3,24,3" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+                                    </Grid.Styles>
+                                    <TextBlock Grid.Row="0" Text="Hreyfifærni 1–17" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Grófhreyfingar 1–7 · Fínhreyfingar 8–17" />
+                                    <TextBlock Grid.Row="1" Text="Stýrifærni 18–42" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Athygli og einbeiting 18–26 · Ofvirkni og hvatvísi 27–35 · Vanvirkni og drifleysi 36–39 · Skipulag og áætlanagerð 40–42" />
+                                    <TextBlock Grid.Row="2" Text="Skynjun 43–60" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Rými og áttir 43–47 · Tímaskyn 48–51 · Eigin líkami 52–56 · Form og myndir 57–60" />
+                                    <TextBlock Grid.Row="3" Text="Minni 61–71" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="4" Text="Mál og tal 72–92" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="4" Grid.Column="1" Text="Skilningur á mæltu máli 72–76 · Máltjáning 77–89 · Tjáskipti 90–92" />
+                                    <TextBlock Grid.Row="5" Text="Nám 93–121" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Lestur og skrift 93–100 · Reikningur 101–105 · Almenn námsgeta 106–111 · Að takast á við nám 112–121 (aðeins metið frá 8 ára aldri)" />
+                                    <TextBlock Grid.Row="6" Text="Félagsfærni 122–148" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="7" Text="Tilfinningar og hegðun 149–181" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Row="7" Grid.Column="1" Text="Innhverf einkenni 149–160 · Úthverf hegðun 161–173 · Áráttur, þráhyggja og kippir 174–181" />
+                                </Grid>
+                                <TextBlock Classes="muted" FontSize="12" Margin="0,8,0,0"
+                                           Text="Skorunin var sannreynd með dæminu sem fylgir viðmiðunartöflunum: öll gildi í dálkinum „Result“ fást nákvæmlega. Svör við spurningunum „Hamla erfiðleikar … í daglegu lífi“ (alls ekki/lítið/mikið/mjög mikið) eru ekki skoruð og hliðra ekki númerun spurninga ef þau eru í skjalinu." />
+                                <TextBlock Classes="muted" FontSize="12" FontStyle="Italic"
+                                           Text="Þekking á eðlilegri hegðun og frávikshegðun barna og grunnþekking á mælifræði er forsenda þess að nota listann. Hann má ekki nota einan og sér til að komast að greiningarniðurstöðu." />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+            </Border>
+        </Grid>
+
+        <!-- Drag overlay -->
+        <Border x:Name="DragOverlay" Grid.RowSpan="2" IsVisible="False" Background="#CC0F3D5E" IsHitTestVisible="False">
+            <TextBlock Text="Slepptu Excel-skránni til að lesa inn svörin" Foreground="White" FontSize="22" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+    </Grid>
+</Window>

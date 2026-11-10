@@ -74,7 +74,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                         <Button Content="Skipta" Command="{Binding BrowseCommand}" Padding="10,4" FontSize="12" />
-                                        <Button Content="✕" Command="{Binding ClearFileCommand}" Padding="8,4" FontSize="12"
+                                        <Button Content="×" Command="{Binding ClearFileCommand}" Padding="8,4" FontSize="12"
                                                 ToolTip.Tip="Fjarlægja skrá" />
                                     </StackPanel>
                                 </Grid>

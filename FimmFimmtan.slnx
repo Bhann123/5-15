@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FimmFimmtan.App/FimmFimmtan.App.csproj" />
+    <Project Path="src/FimmFimmtan.Core/FimmFimmtan.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FimmFimmtan.Tests/FimmFimmtan.Tests.csproj" />
+  </Folder>
+</Solution>

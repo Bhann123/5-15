@@ -3,6 +3,10 @@
 Windows-forrit sem skorar **5-15** (Norrænn spurningalisti fyrir foreldra um þroska barns og hegðun, FTF) og ber
 niðurstöðurnar saman við viðmið eftir aldri og kyni.
 
+**Sækja forritið:** opnaðu [Releases](https://github.com/Bhann123/5-15/releases/latest), sæktu
+`5-15-Skorun-Windows.zip`, afþjappaðu og keyrðu `5-15 Skorun.exe`. Ekkert þarf að setja upp. Ef Windows varar við
+skránni: „More info“ → „Run anyway“. Ný útgáfa er smíðuð sjálfkrafa við hverja breytingu á `main`.
+
 1. Sláðu inn nafn, aldur (5–17 ára) og kyn barns.
 2. Hladdu inn Excel-skrá (.xlsx) með svörum foreldra – með hnappnum eða með því að draga skrána inn í gluggann.
 3. Niðurstöður birtast strax: niðurstaða hvers sviðs og undirsviðs, viðmið (miðgildi, meðaltal, staðalfrávik,

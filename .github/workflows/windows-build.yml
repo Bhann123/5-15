@@ -1,0 +1,49 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test
+
+      - name: Publish
+        run: dotnet publish src/FimmFimmtan.App -c Release -r win-x64 -o publish/win-x64
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force "dist/5-15 Skorun" | Out-Null
+          Copy-Item "publish/win-x64/5-15 Skorun.exe" "dist/5-15 Skorun/"
+          Copy-Item "samples/daemi_svor.xlsx" "dist/5-15 Skorun/Dæmi - svör foreldra.xlsx"
+          Compress-Archive -Path "dist/5-15 Skorun" -DestinationPath "dist/5-15-Skorun-Windows.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 5-15-Skorun-Windows
+          path: dist/5-15-Skorun-Windows.zip
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nyjasta
+          name: 5-15 Skorun (nýjasta útgáfa)
+          make_latest: true
+          body: |
+            Sæktu **5-15-Skorun-Windows.zip** hér fyrir neðan, afþjappaðu og keyrðu `5-15 Skorun.exe`.
+            Ef Windows varar við skránni: smelltu á „More info“ og svo „Run anyway“.
+          files: dist/5-15-Skorun-Windows.zip

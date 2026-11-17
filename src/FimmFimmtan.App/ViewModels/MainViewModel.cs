@@ -41,6 +41,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string? _missingInputMessage = "Fylltu inn aldur og kyn barnsins og hladdu inn Excel-skrá með svörum foreldra.";
 
     public ObservableCollection<ResultRow> Results { get; } = [];
+    public ObservableCollection<ResultRow> DomainChart { get; } = [];
+    public ObservableCollection<ResultRow> SubdomainChart { get; } = [];
     public ObservableCollection<AnswerRow> AnswerRows { get; } = [];
     public ObservableCollection<string> Warnings { get; } = [];
 
@@ -180,6 +182,8 @@ public partial class MainViewModel : ObservableObject
     private void Recalculate()
     {
         Results.Clear();
+        DomainChart.Clear();
+        SubdomainChart.Clear();
         Warnings.Clear();
 
         var age = Age is { } a ? (int)a : (int?)null;
@@ -202,6 +206,8 @@ public partial class MainViewModel : ObservableObject
         var report = Scorer.Score(new ChildInfo(Name.Trim(), age.Value, IsMale ? Sex.Male : Sex.Female), _answers,
             new ScoringOptions(IncludePositiveItems));
         foreach (var r in report.Results) Results.Add(new ResultRow(r));
+        foreach (var r in Profile.Domains(report.Results)) DomainChart.Add(new ResultRow(r));
+        foreach (var r in Profile.Subdomains(report.Results)) SubdomainChart.Add(new ResultRow(r));
         foreach (var w in _answers.Warnings) Warnings.Add(w);
         if (report.Group == AgeGroup.Age5_7 && _answers.Items.Skip(92).Take(29).Any(i => i.Score.HasValue))
             Warnings.Add("Spurningum um nám (93–121) var svarað, en engin viðmið eru til fyrir 5–7 ára og námssviðið er því ekki metið.");

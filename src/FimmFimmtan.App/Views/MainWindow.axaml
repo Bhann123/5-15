@@ -141,7 +141,7 @@
                                 </ItemsControl>
 
                                 <Border Grid.Row="2" BorderBrush="{StaticResource CardBorder}" BorderThickness="0,0,0,1" Padding="8,6,22,6">
-                                    <Grid ColumnDefinitions="*,70,54,60,60,60,46,46,130,150">
+                                    <Grid ColumnDefinitions="*,80,60,66,66,66,54,54,170">
                                         <TextBlock Grid.Column="0" Classes="th" Text="Svið" />
                                         <TextBlock Grid.Column="1" Classes="th" Text="Niðurstaða" HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="2" Classes="th" Text="Svarað" HorizontalAlignment="Right" />
@@ -150,8 +150,7 @@
                                         <TextBlock Grid.Column="5" Classes="th" Text="Staðalfr." HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="6" Classes="th" Text="90%" HorizontalAlignment="Right" />
                                         <TextBlock Grid.Column="7" Classes="th" Text="98%" HorizontalAlignment="Right" />
-                                        <TextBlock Grid.Column="8" Classes="th" Text="Snið (0–2)" Margin="16,0,0,0" />
-                                        <TextBlock Grid.Column="9" Classes="th" Text="Mat" Margin="12,0,0,0" />
+                                        <TextBlock Grid.Column="8" Classes="th" Text="Mat" Margin="16,0,0,0" />
                                     </Grid>
                                 </Border>
 
@@ -168,7 +167,7 @@
                                                                 <Setter Property="Background" Value="#F7F9FC" />
                                                             </Style>
                                                         </Border.Styles>
-                                                        <Grid ColumnDefinitions="*,70,54,60,60,60,46,46,130,150">
+                                                        <Grid ColumnDefinitions="*,80,60,66,66,66,54,54,170">
                                                             <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"
                                                                        TextTrimming="CharacterEllipsis" FontSize="13"
                                                                        Classes.domain="{Binding IsDomain}" Classes.sub="{Binding IsSubdomain}">
@@ -200,8 +199,7 @@
                                                             <TextBlock Grid.Column="5" Classes="normnum" Text="{Binding SdText}" />
                                                             <TextBlock Grid.Column="6" Classes="normnum" Text="{Binding P90Text}" />
                                                             <TextBlock Grid.Column="7" Classes="normnum" Text="{Binding P98Text}" />
-                                                            <c:NormBar Grid.Column="8" Result="{Binding Result}" Height="16" Margin="16,0,0,0" />
-                                                            <Border Grid.Column="9" Classes="pill" Margin="12,0,0,0"
+                                                            <Border Grid.Column="8" Classes="pill" Margin="16,0,0,0"
                                                                     Classes.p98="{Binding IsAbove98}" Classes.p90="{Binding IsAbove90}"
                                                                     Classes.ok="{Binding IsTypical}" Classes.none="{Binding IsNotScored}">
                                                                 <Border.Styles>
@@ -221,28 +219,96 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-
-                                        <WrapPanel Margin="8,14,8,16" Orientation="Horizontal">
-                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,4">
-                                                <Border Width="22" Height="10" Background="#3B7CB8" CornerRadius="2" VerticalAlignment="Center" />
-                                                <TextBlock Text="Niðurstaða barns" Classes="muted" />
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,4">
-                                                <Border Width="2" Height="14" Background="#64748B" VerticalAlignment="Center" />
-                                                <TextBlock Text="Meðaltal viðmiðunarhóps" Classes="muted" />
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,4">
-                                                <Border Width="22" Height="10" Background="#FBEBC4" VerticalAlignment="Center" />
-                                                <TextBlock Text="90.–98. hundraðsmark" Classes="muted" />
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,18,4">
-                                                <Border Width="22" Height="10" Background="#F6D2CD" VerticalAlignment="Center" />
-                                                <TextBlock Text="Yfir 98. hundraðsmarki" Classes="muted" />
-                                            </StackPanel>
-                                        </WrapPanel>
+                                        <Border Height="16" />
                                     </StackPanel>
                                 </ScrollViewer>
                             </Grid>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Myndrit" FontSize="15">
+                        <Grid>
+                            <StackPanel IsVisible="{Binding !HasReport}" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420" Spacing="10">
+                                <TextBlock Text="Ekkert myndrit enn" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding MissingInputMessage}" Classes="muted" TextAlignment="Center" FontSize="13" />
+                            </StackPanel>
+                            <ScrollViewer IsVisible="{Binding HasReport}">
+                                <StackPanel Spacing="16" Margin="10,10,24,20">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{Binding ReportHeading}" FontSize="16" FontWeight="SemiBold" />
+                                        <TextBlock Classes="muted" FontSize="13"
+                                                   Text="Hvert svið er sýnt á eigin hundraðsmarkakvarða viðmiðunarhópsins. Súlan sýnir hvar niðurstaða barnsins lendir." />
+                                    </StackPanel>
+                                <Border Classes="chart">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Classes="h2" Text="Aðalþættir" />
+                                        <ItemsControl ItemsSource="{Binding DomainChart}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:ResultRow">
+                                                    <Grid ColumnDefinitions="250,*,60" Height="28" ToolTip.Tip="{Binding Tooltip}" Background="Transparent">
+                                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontSize="13" Margin="0,0,12,0"
+                                                                   TextTrimming="CharacterEllipsis" Classes.none="{Binding IsNotScored}">
+                                                            <TextBlock.Styles>
+                                                                <Style Selector="TextBlock.none"><Setter Property="Foreground" Value="#94A3B8" /></Style>
+                                                            </TextBlock.Styles>
+                                                        </TextBlock>
+                                                        <c:NormBar Grid.Column="1" Result="{Binding Result}" />
+                                                        <TextBlock Grid.Column="2" Classes="num" Text="{Binding ScoreText}" FontWeight="SemiBold"
+                                                                   Classes.flag98="{Binding IsAbove98}" Classes.flag90="{Binding IsAbove90}">
+                                                            <TextBlock.Styles>
+                                                                <Style Selector="TextBlock.flag98"><Setter Property="Foreground" Value="{StaticResource Red}" /></Style>
+                                                                <Style Selector="TextBlock.flag90"><Setter Property="Foreground" Value="{StaticResource Amber}" /></Style>
+                                                            </TextBlock.Styles>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Grid ColumnDefinitions="250,*,60">
+                                            <Grid Grid.Column="1" ColumnDefinitions="2*,*,*">
+                                                <TextBlock Grid.Column="0" Classes="th" Text="0–90%" HorizontalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Classes="th" Text="90–98%" HorizontalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Classes="th" Text="98–100%" HorizontalAlignment="Center" />
+                                            </Grid>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="chart">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Classes="h2" Text="Undirþættir" />
+                                        <ItemsControl ItemsSource="{Binding SubdomainChart}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:ResultRow">
+                                                    <Grid ColumnDefinitions="250,*,60" Height="28" ToolTip.Tip="{Binding Tooltip}" Background="Transparent">
+                                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontSize="13" Margin="0,0,12,0"
+                                                                   TextTrimming="CharacterEllipsis" Classes.none="{Binding IsNotScored}">
+                                                            <TextBlock.Styles>
+                                                                <Style Selector="TextBlock.none"><Setter Property="Foreground" Value="#94A3B8" /></Style>
+                                                            </TextBlock.Styles>
+                                                        </TextBlock>
+                                                        <c:NormBar Grid.Column="1" Result="{Binding Result}" />
+                                                        <TextBlock Grid.Column="2" Classes="num" Text="{Binding ScoreText}" FontWeight="SemiBold"
+                                                                   Classes.flag98="{Binding IsAbove98}" Classes.flag90="{Binding IsAbove90}">
+                                                            <TextBlock.Styles>
+                                                                <Style Selector="TextBlock.flag98"><Setter Property="Foreground" Value="{StaticResource Red}" /></Style>
+                                                                <Style Selector="TextBlock.flag90"><Setter Property="Foreground" Value="{StaticResource Amber}" /></Style>
+                                                            </TextBlock.Styles>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Grid ColumnDefinitions="250,*,60">
+                                            <Grid Grid.Column="1" ColumnDefinitions="2*,*,*">
+                                                <TextBlock Grid.Column="0" Classes="th" Text="0–90%" HorizontalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Classes="th" Text="90–98%" HorizontalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Classes="th" Text="98–100%" HorizontalAlignment="Center" />
+                                            </Grid>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                </StackPanel>
+                            </ScrollViewer>
                         </Grid>
                     </TabItem>
 

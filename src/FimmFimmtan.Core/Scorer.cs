@@ -20,6 +20,32 @@ public sealed record ScaleResult(Scale Scale, double? Score, int Answered, int T
         : s >= n.P98 ? Level.Above98 : s >= n.P90 ? Level.Above90 : Level.Typical;
 
     public bool FewAnswers => Answered > 0 && PercentAnswered < Scorer.MinPercentAnswered;
+
+    public double? ProfilePosition => Score is { } s && Norm is { IsAvailable: true } n ? Profile.Position(s, n) : null;
+}
+
+/// <summary>
+/// Profile chart scale used in the 5-15 reports: each scale is drawn on its own percentile axis, where
+/// 0..P90 fills the first half, P90..P98 the next quarter and P98..2 the last quarter.
+/// </summary>
+public static class Profile
+{
+    public const double Band90 = 0.5;
+    public const double Band98 = 0.75;
+    private const double MaxScore = 2.0;
+
+    public static double Position(double score, Norm n)
+    {
+        if (score <= n.P90) return n.P90 > 0 ? score / n.P90 * Band90 : 0;
+        if (score <= n.P98) return Band90 + (n.P98 > n.P90 ? (score - n.P90) / (n.P98 - n.P90) : 1) * (Band98 - Band90);
+        return Math.Min(1, Band98 + (MaxScore > n.P98 ? (score - n.P98) / (MaxScore - n.P98) : 1) * (1 - Band98));
+    }
+
+    public static IEnumerable<ScaleResult> Domains(IEnumerable<ScaleResult> results) => results.Where(r => r.Scale.IsDomain);
+
+    /// <summary>All subdomains in questionnaire order; Memory and Social skills have none and appear as themselves.</summary>
+    public static IEnumerable<ScaleResult> Subdomains(IEnumerable<ScaleResult> results) =>
+        results.Where(r => !r.Scale.IsDomain || !Scales.SubdomainsOf(r.Scale.Key).Any());
 }
 
 public sealed record ChildInfo(string Name, int Age, Sex Sex);

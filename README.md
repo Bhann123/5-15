@@ -36,6 +36,9 @@ greint sjálfkrafa. Flipinn **Svör** sýnir hverja spurningu með svarinu og re
 * Niðurstaða við eða yfir 90. hundraðsmarki viðmiðunarhóps er merkt gul, við eða yfir 98. hundraðsmarki rauð.
   z-gildi = (niðurstaða − meðaltal) / staðalfrávik.
 * Námssviðið (93–121) er ekki metið fyrir 5–7 ára (engin viðmið).
+* Myndritin (flipinn **Myndrit** og síða 2 í PDF-skýrslunni) eru skipt í aðalþætti og undirþætti. Hvert svið er
+  sýnt á eigin hundraðsmarkakvarða: 0 til 90. hundraðsmarks fyllir fyrri helming ássins, 90.–98. næsta fjórðung og
+  98. hundraðsmark upp í 2,0 síðasta fjórðunginn, eins og í myndritunum í 5-15 skýrslunum.
 
 | Svið | Spurningar | Undirsvið |
 | --- | --- | --- |

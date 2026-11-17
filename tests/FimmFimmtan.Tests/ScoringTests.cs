@@ -87,6 +87,33 @@ public class ScoringTests
         Assert.Equal((35.0 / 25 - 0.31) / 0.34, z, 6);
     }
 
+    [Theory]
+    // Points read off the profile chart in the example report (8-11 years, female; axis 0..1).
+    [InlineData("motor", 0.00, 0.00)]
+    [InlineData("perc", 0.17, 0.30)]
+    [InlineData("learn", 0.44, 0.44)]
+    [InlineData("memory", 0.55, 0.56)]
+    [InlineData("emo", 0.52, 0.68)]
+    [InlineData("exec", 1.44, 0.82)]
+    [InlineData("emo.acting", 0.85, 0.77)]
+    public void Profile_position_matches_example_chart(string key, double score, double expected)
+    {
+        var norm = Norms.Get(AgeGroup.Age8_11, Sex.Female, key)!;
+        Assert.Equal(expected, Profile.Position(score, norm), 2);
+    }
+
+    [Fact]
+    public void Profile_charts_split_into_domains_and_subdomains()
+    {
+        var report = Scorer.Score(new ChildInfo("Dæmi", 9, Sex.Male), ToAnswers(ExampleScores()));
+        Assert.Equal(8, Profile.Domains(report.Results).Count());
+        var subs = Profile.Subdomains(report.Results).Select(r => r.Scale.Key).ToList();
+        Assert.Equal(22, subs.Count);
+        Assert.Equal(["motor.gross", "motor.fine"], subs.Take(2));
+        Assert.Contains("memory", subs);
+        Assert.Contains("social", subs);
+    }
+
     [Fact]
     public void Norm_tables_contain_every_scale_for_every_group()
     {

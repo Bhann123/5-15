@@ -295,6 +295,20 @@ public class ScoringTests
     }
 
     [Fact]
+    public void Reads_the_bundled_sample_workbooks()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (!File.Exists(Path.Combine(dir, "FimmFimmtan.slnx"))) dir = Path.GetDirectoryName(dir)!;
+
+        var example = ExcelAnswerReader.Read(Path.Combine(dir, "samples", "daemi_svor.xlsx"));
+        Assert.Empty(example.Warnings);
+        Assert.Equal(Scales.ItemCount, example.AnsweredCount);
+        Assert.Equal(("Dæmi Dæmason", 9, Sex.Male), (example.ChildName, example.ChildAge, example.ChildSex));
+
+        Assert.Throws<InvalidDataException>(() => ExcelAnswerReader.Read(Path.Combine(dir, "samples", "snidmat_svor.xlsx")));
+    }
+
+    [Fact]
     public void Saved_answers_load_back_with_child_details()
     {
         var scores = ExampleScores();

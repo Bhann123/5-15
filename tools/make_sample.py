@@ -23,7 +23,7 @@ def section(i):
     return [name for start, name in SECTIONS if start <= i][-1]
 
 
-def workbook(answers):
+def workbook(answers, child=("", "", "")):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Svör"
@@ -45,6 +45,16 @@ def workbook(answers):
     ws.column_dimensions["C"].width = 26
     ws.column_dimensions["D"].width = 2
     ws.column_dimensions["E"].width = 32
+    for row, (label, value) in enumerate(zip(["Nafn", "Aldur", "Kyn"], child), start=1):
+        ws.cell(row, 7, label).font = Font(bold=True)
+        ws.cell(row, 8, value if value != "" else None).fill = PatternFill("solid", fgColor="FFF8E1")
+    sex = DataValidation(type="list", formula1='"Drengur,Stúlka"', allow_blank=True)
+    ws.add_data_validation(sex)
+    sex.add("H3")
+    ws["G5"] = "Valfrjálst: nafn, aldur og kyn fyllast sjálfkrafa út í forritinu."
+    ws["G5"].font = Font(italic=True, color="64748B")
+    ws.column_dimensions["G"].width = 8
+    ws.column_dimensions["H"].width = 22
     ws.freeze_panes = "A2"
     return wb
 
@@ -57,6 +67,6 @@ weights = {
     "Að takast á við nám": [0.35, 0.45, 0.2], "Minni": [0.6, 0.35, 0.05],
 }
 answers = [random.choices(OPTS, weights.get(section(i), [0.85, 0.13, 0.02]))[0] for i in range(1, 182)]
-workbook(answers).save("samples/daemi_svor.xlsx")
+workbook(answers, ("Dæmi Dæmason", 9, "Drengur")).save("samples/daemi_svor.xlsx")
 workbook(None).save("samples/snidmat_svor.xlsx")
 print("ok")

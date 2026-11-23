@@ -31,6 +31,8 @@ Svör við spurningunum „Hamla erfiðleikar … í daglegu lífi“ (alls ekki
 hliðra ekki númerun ef þau eru í dálkinum. Ef svörin eru í línu 2 frá E til hægri (útflutningur úr Forms) er það
 greint sjálfkrafa. Flipinn **Svör** sýnir hverja spurningu með svarinu og reitnum sem það kom úr.
 
+Valfrjálst: ef **G1:G3** innihalda „Nafn“, „Aldur“ og „Kyn“ eru gildin í **H1:H3** lesin inn (kyn: Drengur/Stúlka).
+
 ## Hvernig er skorað
 
 * Hver spurning gefur 0, 1 eða 2 stig.

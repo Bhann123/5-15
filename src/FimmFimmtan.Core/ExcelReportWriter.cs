@@ -50,8 +50,25 @@ public static class ExcelReportWriter
             if (fill != null) ws.Range(row, 3, row, 11).Style.Fill.SetBackgroundColor(XLColor.FromHtml(fill));
             row++;
         }
+        var tableEnd = row - 1;
         ws.Range(top + 1, 3, row, 10).Style.NumberFormat.Format = "0.00";
         ws.Range(top + 1, 4, row, 4).Style.NumberFormat.Format = "0";
+
+        var impact = report.Answers.Impact.Where(i => i.Level is not null).ToList();
+        if (impact.Count > 0)
+        {
+            row += 1;
+            ws.Cell(row, 1).Value = "Hömlun í daglegu lífi (ekki skorað)";
+            ws.Range(row, 1, row, 3).Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.FromHtml("#E8EEF5"));
+            row++;
+            foreach (var i in impact)
+            {
+                ws.Cell(row, 1).Value = i.Info.TextIs;
+                ws.Cell(row, 3).Value = ImpactQuestions.Label(i.Level!.Value);
+                if (i.Level >= 2) ws.Cell(row, 3).Style.Fill.SetBackgroundColor(XLColor.FromHtml("#FCE8B8"));
+                row++;
+            }
+        }
 
         row += 1;
         ws.Cell(row++, 1).Value = "Skorun: Á ekki við = 0, Á stundum við = 1, Á við = 2. Niðurstaða sviðs er meðaltal svaraðra spurninga.";
@@ -59,7 +76,7 @@ public static class ExcelReportWriter
         ws.Cell(row++, 1).Value = "Spurningar 110 og 111 (styrkleikar) eru ekki skoraðar.";
         ws.Cell(row, 1).Value = "Listann má ekki nota einan og sér til að komast að greiningarniðurstöðu.";
 
-        ws.Columns(1, 2).AdjustToContents();
+        ws.Columns(1, 2).AdjustToContents(top, tableEnd);
         ws.Columns(3, 11).Width = 12;
         ws.Column(11).Width = 26;
     }
@@ -77,6 +94,15 @@ public static class ExcelReportWriter
             ws.Cell(row, 3).Value = a.Raw;
             if (a.Score is { } s) ws.Cell(row, 4).Value = s;
             ws.Cell(row, 5).Value = a.SourceCell;
+            row++;
+            if (ImpactQuestions.AfterItem(a.Item) is not { } q) continue;
+            var i = answers.Impact.FirstOrDefault(x => x.Question == q.Number);
+            ws.Cell(row, 1).Value = q.Key;
+            ws.Cell(row, 2).Value = q.TextIs;
+            ws.Cell(row, 3).Value = i?.Raw ?? "";
+            if (i?.Level is { } level) ws.Cell(row, 4).Value = level;
+            ws.Cell(row, 5).Value = i?.SourceCell ?? "";
+            ws.Range(row, 1, row, 5).Style.Font.SetItalic().Fill.SetBackgroundColor(XLColor.FromHtml("#EEF4FA"));
             row++;
         }
         ws.Column(1).Width = 6;

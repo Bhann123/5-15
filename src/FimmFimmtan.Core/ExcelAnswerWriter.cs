@@ -2,7 +2,10 @@ using ClosedXML.Excel;
 
 namespace FimmFimmtan.Core;
 
-/// <summary>Writes answers in the same layout <see cref="ExcelAnswerReader"/> reads: one answer per row from E2 down.</summary>
+/// <summary>
+/// Writes answers in the layout <see cref="ExcelAnswerReader"/> reads: one answer per row in column E with the question
+/// number in column A, and the daily-function questions (H1–H10) on their own rows after the section they follow.
+/// </summary>
 public static class ExcelAnswerWriter
 {
     public static void Write(QuestionnaireAnswers answers, ChildInfo? child, string path)
@@ -16,9 +19,13 @@ public static class ExcelAnswerWriter
         ws.Cell(1, 5).Value = "Svar";
         ws.Row(1).Style.Font.Bold = true;
 
+        var row = 1;
+        var itemRows = new List<int>();
+        var impactRows = new List<int>();
         foreach (var a in answers.Items)
         {
-            var row = a.Item + 1;
+            row++;
+            itemRows.Add(row);
             ws.Cell(row, 1).Value = a.Item;
             ws.Cell(row, 2).Value = ItemTexts.Get(a.Item);
             ws.Cell(row, 3).Value = Scales.All.Where(s => s.Items.Contains(a.Item)).OrderBy(s => s.IsDomain)
@@ -32,6 +39,21 @@ public static class ExcelAnswerWriter
             {
                 ws.Cell(row, 5).Value = a.Raw;
             }
+
+            if (ImpactQuestions.AfterItem(a.Item) is not { } q) continue;
+            row++;
+            impactRows.Add(row);
+            ws.Cell(row, 1).Value = q.Key;
+            ws.Cell(row, 2).Value = q.TextIs;
+            ws.Cell(row, 3).Value = "Hömlun í daglegu lífi";
+            if (answers.ImpactLevelOf(q.Number) is { } level)
+            {
+                ws.Cell(row, 4).Value = level;
+                ws.Cell(row, 5).Value = ImpactQuestions.Label(level);
+            }
+            var range = ws.Range(row, 1, row, 5);
+            range.Style.Fill.BackgroundColor = XLColor.FromHtml("#EEF4FA");
+            range.Style.Font.Italic = true;
         }
 
         if (child != null)
@@ -42,9 +64,10 @@ public static class ExcelAnswerWriter
             ws.Range(1, 7, 3, 7).Style.Font.Bold = true;
         }
 
-        var validation = ws.Range(2, 5, Scales.ItemCount + 1, 5).CreateDataValidation();
-        validation.List($"\"{AnswerParser.Option0},{AnswerParser.Option1},{AnswerParser.Option2}\"");
-        validation.IgnoreBlanks = true;
+        var itemOptions = $"\"{AnswerParser.Option0},{AnswerParser.Option1},{AnswerParser.Option2}\"";
+        var impactOptions = $"\"{string.Join(",", ImpactQuestions.Options)}\"";
+        foreach (var r in itemRows) ws.Cell(r, 5).CreateDataValidation().List(itemOptions);
+        foreach (var r in impactRows) ws.Cell(r, 5).CreateDataValidation().List(impactOptions);
 
         ws.Column(1).Width = 6;
         ws.Column(2).Width = 70;

@@ -33,7 +33,10 @@ public static class ExcelAnswerReader
 
             if (acrossCount > downCount * 4 && acrossCount >= 20)
                 return AnswerParser.Map(across, $"{fileName} · blað „{ws.Name}“ · lína 2 frá E til hægri");
-            var answers = AnswerParser.Map(down, $"{fileName} · blað „{ws.Name}“ · dálkur E frá E2 og niður");
+            var keyed = ReadKeyedRows(ws);
+            var answers = keyed.Count(r => int.TryParse(r.Key.Trim().TrimEnd('.'), out var n) && n is >= 1 and <= Scales.ItemCount) >= 100
+                ? AnswerParser.MapKeyed(keyed, $"{fileName} · blað „{ws.Name}“ · dálkur E, spurninganúmer í dálki A")
+                : AnswerParser.Map(down, $"{fileName} · blað „{ws.Name}“ · dálkur E frá E2 og niður");
             ReadChildInfo(ws, answers);
             return answers;
         }
@@ -60,6 +63,18 @@ public static class ExcelAnswerReader
                     break;
             }
         }
+    }
+
+    private static List<(string Key, string Text, string Raw, string Cell)> ReadKeyedRows(IXLWorksheet ws)
+    {
+        var last = Math.Max(ws.Column(1).LastCellUsed()?.Address.RowNumber ?? 0, ws.Column(StartColumn).LastCellUsed()?.Address.RowNumber ?? 0);
+        var rows = new List<(string, string, string, string)>();
+        for (var r = StartRow; r <= last; r++)
+        {
+            var e = ws.Cell(r, StartColumn);
+            rows.Add((ws.Cell(r, 1).GetFormattedString(), ws.Cell(r, 2).GetFormattedString(), e.GetFormattedString(), e.Address.ToString()!));
+        }
+        return rows;
     }
 
     private static List<(string Raw, string Cell)> ReadLine(IXLWorksheet ws, int row, int col, bool vertical)

@@ -18,7 +18,7 @@ public partial class MainViewModel : ObservableObject
     private static readonly CultureInfo Is = CultureInfo.GetCultureInfo("is-IS");
     private readonly IFileDialogs _dialogs;
     private readonly AnswerRow[] _rows;
-    private IReadOnlyList<ImpactAnswer> _impact = [];
+    private readonly ImpactRow[] _impactRows;
     private List<string> _fileWarnings = [];
     private bool _editedSinceLoad;
     private bool _loadingRows;
@@ -27,6 +27,7 @@ public partial class MainViewModel : ObservableObject
     {
         _dialogs = dialogs;
         _rows = Enumerable.Range(1, Scales.ItemCount).Select(i => new AnswerRow(i, ScaleNameFor(i), OnAnswerChanged)).ToArray();
+        _impactRows = ImpactQuestions.All.Select(q => new ImpactRow(q, () => OnAnswerChanged(null))).ToArray();
         RebuildAnswerRows();
     }
 
@@ -61,13 +62,15 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<ResultRow> Results { get; } = [];
     public ObservableCollection<ResultRow> DomainChart { get; } = [];
     public ObservableCollection<ResultRow> SubdomainChart { get; } = [];
-    public ObservableCollection<AnswerRow> AnswerRows { get; } = [];
+    public ObservableCollection<IAnswerRow> AnswerRows { get; } = [];
+    public ObservableCollection<ImpactResultRow> ImpactResults { get; } = [];
+    public bool HasImpactResults => ImpactResults.Count > 0;
     public ObservableCollection<string> Warnings { get; } = [];
 
     public bool HasReport => Report != null;
     public bool HasFile => FileName != null;
     public int AnsweredCount => _rows.Count(r => r.IsAnswered);
-    public bool HasAnyAnswer => _rows.Any(r => r.IsAnswered || r.IsUnrecognized);
+    public bool HasAnyAnswer => _rows.Any(r => r.IsAnswered || r.IsUnrecognized) || _impactRows.Any(r => r.IsAnswered);
     public bool HasWarnings => Warnings.Count > 0;
     public bool CanExport => Report != null;
     public string AnswersTabHeader => $"Svör ({AnsweredCount}/{Scales.ItemCount})";
@@ -141,14 +144,14 @@ public partial class MainViewModel : ObservableObject
     {
         _loadingRows = true;
         foreach (var row in _rows) row.Load(answers.Items[row.Item - 1]);
+        foreach (var row in _impactRows) row.Load(answers.Impact.FirstOrDefault(i => i.Question == row.Question.Number));
         _loadingRows = false;
-        _impact = answers.Impact;
         _fileWarnings = answers.Warnings.ToList();
         _editedSinceLoad = false;
         RebuildAnswerRows();
     }
 
-    private void OnAnswerChanged(AnswerRow row)
+    private void OnAnswerChanged(AnswerRow? row)
     {
         if (_loadingRows) return;
         _editedSinceLoad = true;
@@ -167,7 +170,8 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(AnswerProgressValue));
         if (FileName != null)
         {
-            var impact = _impact.Count > 0 ? $" · {_impact.Count} svör um hömlun í daglegu lífi" : "";
+            var impactCount = _impactRows.Count(r => r.IsAnswered);
+            var impact = impactCount > 0 ? $" · {impactCount} svör um hömlun í daglegu lífi" : "";
             FileDetails = _editedSinceLoad ? $"{AnswerProgress} · breytt í forritinu" : AnswerProgress + impact;
         }
         Recalculate();
@@ -177,7 +181,8 @@ public partial class MainViewModel : ObservableObject
     {
         var source = FileName is null ? "Svarað í forritinu"
             : _editedSinceLoad ? $"{FileName} (breytt í forritinu)" : FileName;
-        var answers = new QuestionnaireAnswers { Items = _rows.Select(r => r.Answer).ToList(), Impact = _impact, SourceDescription = source };
+        var answers = new QuestionnaireAnswers { Items = _rows.Select(r => r.Answer).ToList(),
+            Impact = _impactRows.Select(r => r.Answer).OfType<ImpactAnswer>().ToList(), SourceDescription = source };
         answers.Warnings.AddRange(_fileWarnings);
         return answers;
     }
@@ -235,8 +240,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     /// <summary>Answers the given row and moves focus to the next one, for fast entry from a paper form.</summary>
-    public void AnswerAndAdvance(AnswerRow row, int? score)
+    public void AnswerAndAdvance(IAnswerRow row, int? score)
     {
+        if (score > row.MaxScore) return;
         row.SetScore(score);
         var index = AnswerRows.IndexOf(row);
         if (score is not null && index >= 0 && index + 1 < AnswerRows.Count) FocusAnswerRequested?.Invoke(index + 1);
@@ -297,6 +303,10 @@ public partial class MainViewModel : ObservableObject
         DomainChart.Clear();
         SubdomainChart.Clear();
         Warnings.Clear();
+        ImpactResults.Clear();
+        foreach (var r in _impactRows)
+            if (r.CurrentScore is { } level) ImpactResults.Add(new ImpactResultRow(r.Question, level));
+        OnPropertyChanged(nameof(HasImpactResults));
 
         var age = Age is { } a ? (int)a : (int?)null;
         string? missing = null;
@@ -334,8 +344,11 @@ public partial class MainViewModel : ObservableObject
     {
         AnswerRows.Clear();
         foreach (var row in _rows)
-            if (!ShowOnlyProblemAnswers || !row.IsAnswered)
-                AnswerRows.Add(row);
+        {
+            if (!ShowOnlyProblemAnswers || !row.IsAnswered) AnswerRows.Add(row);
+            if (ImpactQuestions.AfterItem(row.Item) is { } q && _impactRows[q.Number - 1] is var impact && (!ShowOnlyProblemAnswers || !impact.IsAnswered))
+                AnswerRows.Add(impact);
+        }
     }
 
     private static string ScaleNameFor(int item) =>

@@ -10,6 +10,10 @@ from openpyxl.worksheet.datavalidation import DataValidation
 OPTS = ["Á ekki við", "Á stundum við", "Á við"]
 texts = re.findall(r'^\s+"(.*)",$', open("src/FimmFimmtan.Core/ItemTexts.cs", encoding="utf-8").read(), re.M)
 assert len(texts) == 181
+IMPACT_OPTS = ["Alls ekki", "Lítið", "Mikið", "Mjög mikið"]
+impact = {int(after): (int(num), text) for num, after, text in
+          re.findall(r'new\((\d+), (\d+), "\w+", "(.*?)",', open("src/FimmFimmtan.Core/ImpactQuestions.cs", encoding="utf-8").read())}
+assert len(impact) == 10
 
 SECTIONS = [(1, "Grófhreyfingar"), (8, "Fínhreyfingar"), (18, "Athygli og einbeiting"), (27, "Ofvirkni og hvatvísi"),
             (36, "Vanvirkni og drifleysi"), (40, "Skipulag og áætlanagerð"), (43, "Skynjun á rými og áttum"),
@@ -23,7 +27,7 @@ def section(i):
     return [name for start, name in SECTIONS if start <= i][-1]
 
 
-def workbook(answers, child=("", "", "")):
+def workbook(answers, impact_answers=None, child=("", "", "")):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Svör"
@@ -33,13 +37,28 @@ def workbook(answers, child=("", "", "")):
         ws[f"{col}1"].fill = PatternFill("solid", fgColor="0F3D5E")
     dv = DataValidation(type="list", formula1='"' + ",".join(OPTS) + '"', allow_blank=True)
     ws.add_data_validation(dv)
+    idv = DataValidation(type="list", formula1='"' + ",".join(IMPACT_OPTS) + '"', allow_blank=True)
+    ws.add_data_validation(idv)
+    row = 1
     for i, t in enumerate(texts, start=1):
-        ws.cell(i + 1, 1, i)
-        ws.cell(i + 1, 2, t).alignment = Alignment(wrap_text=True, vertical="top")
-        ws.cell(i + 1, 3, section(i))
-        e = ws.cell(i + 1, 5, answers[i - 1] if answers else None)
+        row += 1
+        ws.cell(row, 1, i)
+        ws.cell(row, 2, t).alignment = Alignment(wrap_text=True, vertical="top")
+        ws.cell(row, 3, section(i))
+        e = ws.cell(row, 5, answers[i - 1] if answers else None)
         e.fill = PatternFill("solid", fgColor="FFF8E1")
         dv.add(e)
+        if i in impact:
+            num, text = impact[i]
+            row += 1
+            for col, value in [(1, f"H{num}"), (2, text), (3, "Hömlun í daglegu lífi")]:
+                c = ws.cell(row, col, value)
+                c.font = Font(italic=True, color="0F3D5E")
+                c.fill = PatternFill("solid", fgColor="EEF4FA")
+            ws.cell(row, 2).alignment = Alignment(wrap_text=True, vertical="top")
+            e = ws.cell(row, 5, impact_answers[num - 1] if impact_answers else None)
+            e.fill = PatternFill("solid", fgColor="E3EDF7")
+            idv.add(e)
     ws.column_dimensions["A"].width = 6
     ws.column_dimensions["B"].width = 80
     ws.column_dimensions["C"].width = 26
@@ -67,6 +86,7 @@ weights = {
     "Að takast á við nám": [0.35, 0.45, 0.2], "Minni": [0.6, 0.35, 0.05],
 }
 answers = [random.choices(OPTS, weights.get(section(i), [0.85, 0.13, 0.02]))[0] for i in range(1, 182)]
-workbook(answers, ("Dæmi Dæmason", 9, "Drengur")).save("samples/daemi_svor.xlsx")
+impact_answers = ["Alls ekki", "Mikið", "Lítið", "Mikið", "Alls ekki", "Lítið", "Alls ekki", "Mikið", "Lítið", "Mikið"]
+workbook(answers, impact_answers, ("Dæmi Dæmason", 9, "Drengur")).save("samples/daemi_svor.xlsx")
 workbook(None).save("samples/snidmat_svor.xlsx")
 print("ok")

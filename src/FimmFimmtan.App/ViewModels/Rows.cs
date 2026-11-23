@@ -41,7 +41,15 @@ public sealed class ResultRow(ScaleResult result)
         (result.Z is { } z ? $"\nz = {z.ToString("0.00", Is)} (frávik frá meðaltali í staðalfrávikum)" : "");
 }
 
-public sealed class AnswerRow(int item, string scaleName, Action<AnswerRow> changed) : ObservableObject
+public interface IAnswerRow
+{
+    bool IsAnswered { get; }
+    int? CurrentScore { get; }
+    int MaxScore { get; }
+    void SetScore(int? score);
+}
+
+public sealed class AnswerRow(int item, string scaleName, Action<AnswerRow> changed) : ObservableObject, IAnswerRow
 {
     private ItemAnswer _answer = AnswerParser.Manual(item, null);
 
@@ -58,6 +66,8 @@ public sealed class AnswerRow(int item, string scaleName, Action<AnswerRow> chan
     public bool IsUnrecognized => _answer.Unrecognized;
     public string Cell => _answer.SourceCell;
     public bool IsAnswered => _answer.Score is not null;
+    public int? CurrentScore => _answer.Score;
+    public int MaxScore => 2;
 
     public bool Is0 { get => _answer.Score == 0; set => Set(value, 0); }
     public bool Is1 { get => _answer.Score == 1; set => Set(value, 1); }
@@ -89,4 +99,59 @@ public sealed class AnswerRow(int item, string scaleName, Action<AnswerRow> chan
                      nameof(IsUnrecognized), nameof(Cell), nameof(IsAnswered), nameof(Answer) })
             OnPropertyChanged(name);
     }
+}
+
+public sealed class ImpactRow(ImpactQuestion question, Action changed) : ObservableObject, IAnswerRow
+{
+    private ImpactAnswer? _answer;
+
+    public ImpactQuestion Question => question;
+    public ImpactAnswer? Answer => _answer;
+    public string Key => question.Key;
+    public string Text => question.TextIs;
+    public string Cell => _answer?.SourceCell ?? "";
+    public bool IsAnswered => _answer?.Level is not null;
+    public int? CurrentScore => _answer?.Level;
+    public int MaxScore => 3;
+    public string? FileNote => _answer is { Level: null } a ? $"Í skjali: „{a.Raw}“ – ekki þekkt svar, telst ósvarað" : null;
+    public bool HasFileNote => FileNote != null;
+
+    public bool Is0 { get => CurrentScore == 0; set => Set(value, 0); }
+    public bool Is1 { get => CurrentScore == 1; set => Set(value, 1); }
+    public bool Is2 { get => CurrentScore == 2; set => Set(value, 2); }
+    public bool Is3 { get => CurrentScore == 3; set => Set(value, 3); }
+
+    public void Load(ImpactAnswer? answer)
+    {
+        _answer = answer;
+        RaiseAll();
+    }
+
+    public void SetScore(int? level)
+    {
+        if (CurrentScore == level && _answer is not { Level: null }) return;
+        _answer = level is { } l ? new ImpactAnswer(question.Number, l, ImpactQuestions.Label(l), "") : null;
+        RaiseAll();
+        changed();
+    }
+
+    private void Set(bool isChecked, int level)
+    {
+        if (isChecked) SetScore(level);
+        else if (CurrentScore == level) SetScore(null);
+    }
+
+    private void RaiseAll()
+    {
+        foreach (var name in new[] { nameof(Is0), nameof(Is1), nameof(Is2), nameof(Is3), nameof(FileNote), nameof(HasFileNote),
+                     nameof(Cell), nameof(IsAnswered), nameof(Answer) })
+            OnPropertyChanged(name);
+    }
+}
+
+public sealed class ImpactResultRow(ImpactQuestion question, int level)
+{
+    public string Text => question.TextIs;
+    public string AnswerText => ImpactQuestions.Label(level);
+    public bool IsMarked => level >= 2;
 }

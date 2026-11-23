@@ -238,6 +238,29 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
+                                        <StackPanel IsVisible="{Binding HasImpactResults}" Spacing="0" Margin="0,18,0,0">
+                                            <TextBlock Classes="h2" Text="Hömlun í daglegu lífi" Margin="8,0,0,2" />
+                                            <TextBlock Classes="muted" Text="Mat foreldris á því hve mikið erfiðleikarnir hamla barninu. Ekki skorað og engin viðmið." Margin="8,0,0,6" />
+                                            <ItemsControl ItemsSource="{Binding ImpactResults}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:ImpactResultRow">
+                                                        <Border Padding="8,0" MinHeight="32" BorderBrush="#EEF1F5" BorderThickness="0,0,0,1">
+                                                            <Grid ColumnDefinitions="*,170">
+                                                                <TextBlock Text="{Binding Text}" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,4,12,4" />
+                                                                <Border Grid.Column="1" Classes="pill" Margin="16,0,0,0" Background="#F1F5F9"
+                                                                        Classes.marked="{Binding IsMarked}">
+                                                                    <Border.Styles>
+                                                                        <Style Selector="Border.marked"><Setter Property="Background" Value="{StaticResource AmberSoft}" /></Style>
+                                                                        <Style Selector="Border.marked > TextBlock"><Setter Property="Foreground" Value="{StaticResource Amber}" /></Style>
+                                                                    </Border.Styles>
+                                                                    <TextBlock Text="{Binding AnswerText}" FontSize="11" FontWeight="Medium" />
+                                                                </Border>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
                                         <Border Height="16" />
                                     </StackPanel>
                                 </ScrollViewer>
@@ -335,13 +358,34 @@
                         <Grid RowDefinitions="Auto,*" Margin="10,6,10,0">
                             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,4,0,8">
                                 <TextBlock Classes="muted" VerticalAlignment="Center" Margin="0,0,16,0"
-                                           Text="Smelltu á svar, eða veldu spurningu og ýttu á 0, 1 eða 2 – þá færist bendillinn á næstu spurningu. Örvar færa upp og niður, Delete hreinsar svar." />
+                                           Text="Smelltu á svar, eða veldu spurningu og ýttu á 0, 1 eða 2 (0–3 í spurningum um hömlun) – þá færist bendillinn á næstu spurningu. Örvar færa upp og niður, Delete hreinsar svar." />
                                 <CheckBox Grid.Column="1" IsChecked="{Binding ShowOnlyProblemAnswers}" Content="Sýna aðeins ósvaraðar" FontSize="12" />
                             </Grid>
                             <ScrollViewer Grid.Row="1">
                                 <ItemsControl x:Name="AnswerList" ItemsSource="{Binding AnswerRows}" Margin="0,0,14,0">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:AnswerRow">
+                                    <ItemsControl.DataTemplates>
+                                        <DataTemplate DataType="vm:ImpactRow">
+                                            <Border Classes="answer impact" Padding="8,8" BorderBrush="#D6E2EE" BorderThickness="0,0,0,1">
+                                                <Grid ColumnDefinitions="44,*,Auto,50">
+                                                    <TextBlock Text="{Binding Key}" FontWeight="SemiBold" Foreground="{StaticResource Brand}" VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" Spacing="1" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="13" FontStyle="Italic" />
+                                                        <TextBlock Text="Hömlun í daglegu lífi · ekki skorað" FontSize="11" Foreground="{StaticResource Muted}" />
+                                                        <TextBlock Text="{Binding FileNote}" IsVisible="{Binding HasFileNote}" FontSize="11" TextWrapping="Wrap"
+                                                                   Foreground="{StaticResource Red}" />
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <ToggleButton Classes="opt first" Content="Alls ekki" Width="68" IsChecked="{Binding Is0}" ToolTip.Tip="Alls ekki (0)" />
+                                                        <ToggleButton Classes="opt" Content="Lítið" Width="62" Margin="-1,0,0,0" IsChecked="{Binding Is1}" ToolTip.Tip="Lítið (1)" />
+                                                        <ToggleButton Classes="opt" Content="Mikið" Width="62" Margin="-1,0,0,0" IsChecked="{Binding Is2}" ToolTip.Tip="Mikið (2)" />
+                                                        <ToggleButton Classes="opt last" Content="Mjög mikið" Width="76" Margin="-1,0,0,0" IsChecked="{Binding Is3}" ToolTip.Tip="Mjög mikið (3)" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="3" Text="{Binding Cell}" FontSize="11" Foreground="{StaticResource Muted}"
+                                                               VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                        <DataTemplate DataType="vm:AnswerRow">
                                             <Border Classes="answer" Padding="8,6" BorderBrush="#EEF1F5" BorderThickness="0,0,0,1">
                                                 <Grid ColumnDefinitions="44,*,Auto,50">
                                                     <TextBlock Text="{Binding Item}" FontWeight="SemiBold" Foreground="{StaticResource Muted}" VerticalAlignment="Center" />
@@ -364,7 +408,7 @@
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
+                                    </ItemsControl.DataTemplates>
                                 </ItemsControl>
                             </ScrollViewer>
                         </Grid>
@@ -399,7 +443,7 @@
                                     <TextBlock Grid.Row="7" Grid.Column="1" Text="Innhverf einkenni 149–160 · Úthverf hegðun 161–173 · Áráttur, þráhyggja og kippir 174–181" />
                                 </Grid>
                                 <TextBlock Classes="muted" FontSize="12" Margin="0,8,0,0"
-                                           Text="Skorunin var sannreynd með dæminu sem fylgir viðmiðunartöflunum: öll gildi í dálkinum „Result“ fást nákvæmlega. Svör við spurningunum „Hamla erfiðleikar … í daglegu lífi“ (alls ekki/lítið/mikið/mjög mikið) eru ekki skoruð og hliðra ekki númerun spurninga ef þau eru í skjalinu." />
+                                           Text="Skorunin var sannreynd með dæminu sem fylgir viðmiðunartöflunum: öll gildi í dálkinum „Result“ fást nákvæmlega. Spurningarnar tíu „Hamla erfiðleikar … í daglegu lífi“ (alls ekki/lítið/mikið/mjög mikið) eru ekki skoraðar og engin viðmið eru til fyrir þær; svörin eru sýnd sér undir töflunni og í skýrslunni." />
                                 <TextBlock Classes="muted" FontSize="12" FontStyle="Italic"
                                            Text="Þekking á eðlilegri hegðun og frávikshegðun barna og grunnþekking á mælifræði er forsenda þess að nota listann. Hann má ekki nota einan og sér til að komast að greiningarniðurstöðu." />
                             </StackPanel>

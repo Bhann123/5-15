@@ -247,7 +247,8 @@ public class ScoringTests
         var answers = ExcelAnswerReader.Read(wb, "test.xlsx");
         Assert.Empty(answers.Warnings);
         Assert.Single(answers.Impact);
-        Assert.Equal(17, answers.Impact[0].AfterItem);
+        Assert.Equal(1, answers.Impact[0].Question);
+        Assert.Equal(1, answers.Impact[0].Level);
         Assert.Equal("E20", answers.Items[17].SourceCell);
 
         var report = Scorer.Score(new ChildInfo("Dæmi", 6, Sex.Female), answers);
@@ -280,7 +281,7 @@ public class ScoringTests
 
         using var wb = new XLWorkbook(xlsx);
         Assert.Equal("Jón Jónsson", wb.Worksheet("Niðurstöður").Cell("B3").GetString());
-        Assert.Equal(Scales.ItemCount + 1, wb.Worksheet("Svör").LastRowUsed()!.RowNumber());
+        Assert.Equal(Scales.ItemCount + ImpactQuestions.All.Count + 1, wb.Worksheet("Svör").LastRowUsed()!.RowNumber());
         Assert.True(new FileInfo(pdf).Length > 10_000);
     }
 
@@ -306,6 +307,7 @@ public class ScoringTests
         Assert.Empty(example.Warnings);
         Assert.Equal(Scales.ItemCount, example.AnsweredCount);
         Assert.Equal(("Dæmi Dæmason", 9, Sex.Male), (example.ChildName, example.ChildAge, example.ChildSex));
+        Assert.Equal(ImpactQuestions.All.Count, example.Impact.Count);
 
         Assert.Throws<InvalidDataException>(() => ExcelAnswerReader.Read(Path.Combine(dir, "samples", "snidmat_svor.xlsx")));
     }
@@ -318,13 +320,66 @@ public class ScoringTests
         var original = ToAnswers(scores);
         var path = Path.Combine(Directory.CreateTempSubdirectory().FullName, "svor.xlsx");
 
+        original = new QuestionnaireAnswers
+        {
+            Items = original.Items,
+            Impact = [new(1, 2, "Mikið", ""), new(10, 0, "Alls ekki", "")],
+        };
+
         ExcelAnswerWriter.Write(original, new ChildInfo("Anna Jónsdóttir", 12, Sex.Female), path);
         var loaded = ExcelAnswerReader.Read(path);
 
         Assert.Empty(loaded.Warnings);
         Assert.Equal(original.Items.Select(i => i.Score), loaded.Items.Select(i => i.Score));
+        Assert.Equal([(1, (int?)2), (10, 0)], loaded.Impact.Select(i => (i.Question, i.Level)));
         Assert.Equal("Anna Jónsdóttir", loaded.ChildName);
         Assert.Equal(12, loaded.ChildAge);
         Assert.Equal(Sex.Female, loaded.ChildSex);
+    }
+
+    [Fact]
+    public void Reads_english_online_layout_with_unanswered_impact_rows()
+    {
+        var scores = ExampleScores();
+        string Text(int? s) => s switch { 0 => "Does not apply", 1 => "Applies sometimes/ to some extent", 2 => "Applies", _ => "" };
+
+        using var wb = new XLWorkbook();
+        var ws = wb.AddWorksheet("Form");
+        var row = 2;
+        for (var i = 1; i <= Scales.ItemCount; i++)
+        {
+            ws.Cell(row, 1).Value = i;
+            ws.Cell(row++, 5).Value = Text(scores[i]);
+            if (ImpactQuestions.AfterItem(i) is { } q)
+            {
+                ws.Cell(row, 2).Value = q.TextEn;
+                if (q.Number == 2) ws.Cell(row, 5).Value = "Pretty much";
+                if (q.Number == 9) ws.Cell(row, 5).Value = "Very much";
+                row++;
+            }
+        }
+
+        var answers = ExcelAnswerReader.Read(wb, "online.xlsx");
+        Assert.Empty(answers.Warnings);
+        Assert.Equal(scores.Skip(1), answers.Items.Select(i => i.Score));
+        Assert.Equal([(2, (int?)2), (9, 3)], answers.Impact.Select(i => (i.Question, i.Level)));
+    }
+
+    [Fact]
+    public void Warns_about_impact_answers_out_of_place_without_question_numbers()
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.AddWorksheet("Svör");
+        var row = 2;
+        for (var i = 1; i <= Scales.ItemCount; i++)
+        {
+            if (i == 10) row++;
+            ws.Cell(row++, 5).Value = "Á ekki við";
+            if (i == 17) ws.Cell(row++, 5).Value = "mikið";
+        }
+
+        var answers = ExcelAnswerReader.Read(wb, "seq.xlsx");
+        Assert.Empty(answers.Impact);
+        Assert.Contains(answers.Warnings, w => w.Contains("hömlun"));
     }
 }

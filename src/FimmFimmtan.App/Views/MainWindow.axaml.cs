@@ -30,13 +30,14 @@ public partial class MainWindow : Window, IFileDialogs
 
     private void OnAnswerKeyDown(object? sender, KeyEventArgs e)
     {
-        if ((e.Source as Control)?.DataContext is not AnswerRow row) return;
+        if ((e.Source as Control)?.DataContext is not IAnswerRow row) return;
         var index = _vm.AnswerRows.IndexOf(row);
         switch (e.Key)
         {
             case Key.D0 or Key.NumPad0: _vm.AnswerAndAdvance(row, 0); break;
             case Key.D1 or Key.NumPad1: _vm.AnswerAndAdvance(row, 1); break;
             case Key.D2 or Key.NumPad2: _vm.AnswerAndAdvance(row, 2); break;
+            case Key.D3 or Key.NumPad3 when row.MaxScore >= 3: _vm.AnswerAndAdvance(row, 3); break;
             case Key.Delete or Key.Back: _vm.AnswerAndAdvance(row, null); break;
             case Key.Down when index + 1 < _vm.AnswerRows.Count: FocusAnswerRow(index + 1); break;
             case Key.Up when index > 0: FocusAnswerRow(index - 1); break;
@@ -48,10 +49,10 @@ public partial class MainWindow : Window, IFileDialogs
     private void FocusAnswerRow(int index)
     {
         if (AnswerList.ContainerFromIndex(index) is not Control container) return;
-        var row = (AnswerRow)container.DataContext!;
+        var row = (IAnswerRow)container.DataContext!;
         var buttons = container.GetVisualDescendants().OfType<ToggleButton>().ToList();
         if (buttons.Count == 0) return;
-        var target = row.Is1 ? buttons[1] : row.Is2 ? buttons[2] : buttons[0];
+        var target = buttons[Math.Min(row.CurrentScore ?? 0, buttons.Count - 1)];
         target.Focus(NavigationMethod.Tab);
         container.BringIntoView(new Avalonia.Rect(0, -60, container.Bounds.Width, container.Bounds.Height + 120));
     }

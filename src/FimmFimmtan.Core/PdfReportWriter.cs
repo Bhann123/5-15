@@ -157,6 +157,26 @@ public static class PdfReportWriter
             col.Item().Text("Hvert svið er sýnt á eigin hundraðsmarkakvarða viðmiðunarhópsins. Súlan sýnir hvar niðurstaða barnsins lendir.").FontColor("#6B7280");
             col.Item().PaddingTop(10).Element(c => ProfileChart(c, "Aðalþættir", Profile.Domains(report.Results).ToList()));
             col.Item().PaddingTop(16).Element(c => ProfileChart(c, "Undirþættir", Profile.Subdomains(report.Results).ToList()));
+
+            if (report.Answers.Impact.Any(i => i.Level is not null))
+                col.Item().PaddingTop(16).ShowEntire().Column(impact =>
+                {
+                    impact.Item().Text("Hömlun í daglegu lífi").SemiBold().FontSize(11);
+                    impact.Item().PaddingBottom(4).Text("Mat foreldris á því hve mikið erfiðleikarnir hamla barninu. Ekki skorað og engin viðmið.")
+                        .FontSize(8).FontColor("#6B7280");
+                    impact.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(c => { c.RelativeColumn(5); c.RelativeColumn(1.2f); });
+                        foreach (var i in report.Answers.Impact.Where(i => i.Level is not null))
+                        {
+                            var bg = i.Level >= 2 ? "#FCE8B8" : "#FFFFFF";
+                            table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").PaddingVertical(3).PaddingHorizontal(3)
+                                .Text(i.Info.TextIs).FontSize(8.5f);
+                            table.Cell().Background(bg).BorderBottom(0.5f).BorderColor("#E5E7EB").PaddingVertical(3).PaddingHorizontal(3)
+                                .Text(ImpactQuestions.Label(i.Level!.Value)).FontSize(8.5f).SemiBold();
+                        }
+                    });
+                });
         });
 
         page.Footer().AlignRight().Text(t =>

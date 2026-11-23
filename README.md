@@ -17,8 +17,8 @@ skránni: „More info“ → „Run anyway“. Ný útgáfa er smíðuð sjálf
 
 ## Excel-skráin
 
-Svörin byrja í reit **E2** og halda áfram niður dálk E, eitt svar í línu, í röð spurninga 1–181
-(`samples/daemi_svor.xlsx` er útfyllt dæmi og `samples/snidmat_svor.xlsx` autt sniðmát með fellilistum í dálki E). Leyfileg svör:
+Svörin eru í dálki **E** frá E2 og niður, eitt svar í línu (`samples/daemi_svor.xlsx` er útfyllt dæmi og
+`samples/snidmat_svor.xlsx` autt sniðmát með fellilistum í dálki E). Leyfileg svör:
 
 | Svar | Stig |
 | --- | --- |
@@ -26,10 +26,22 @@ Svörin byrja í reit **E2** og halda áfram niður dálk E, eitt svar í línu,
 | Á stundum við | 1 |
 | Á við | 2 |
 
-Einnig má nota 0, 1 og 2, og eldra orðalagið „Á stundum/ að nokkru leyti við“ er líka lesið sem 1. Tóm reitur og „óviðkomandi“ teljast ósvaruð. Hástafir, bil og broddstafir skipta ekki máli.
-Svör við spurningunum „Hamla erfiðleikar … í daglegu lífi“ (alls ekki / lítið / mikið / mjög mikið) eru þekkt og
-hliðra ekki númerun ef þau eru í dálkinum. Ef svörin eru í línu 2 frá E til hægri (útflutningur úr Forms) er það
-greint sjálfkrafa. Flipinn **Svör** sýnir hverja spurningu með svarinu og reitnum sem það kom úr.
+Einnig má nota 0, 1 og 2, eldra orðalagið „Á stundum/ að nokkru leyti við“ og ensku svörin af 5-15.org
+(Does not apply / Applies sometimes/ to some extent / Applies). Tómur reitur og „óviðkomandi“ teljast ósvaruð.
+Hástafir, bil og broddstafir skipta ekki máli.
+
+**Spurninganúmer í dálki A (mælt með).** Ef dálkur A inniheldur númer spurninganna (1–181) er hver lína lesin eftir
+númerinu, svo tómar eða aukalínur hliðra engu. Án númera eru svörin lesin í röð og spurning 181 á að vera í E182.
+
+**Hömlun í daglegu lífi.** Á eftir spurningum 17, 35, 39, 42, 60, 71, 92, 121, 148 og 181 koma tíu spurningar á borð
+við „Hamla erfiðleikar með gróf- eða fínhreyfingar barninu í daglegu lífi?“ („Do problems with motor function interfere
+with your child's daily function?“). Þær eru settar í eigin línu strax á eftir viðkomandi spurningu, með **H1–H10** í
+dálki A og svarið í dálki E: Alls ekki (0), Lítið (1), Mikið (2), Mjög mikið (3) – eða Not at all / A little /
+Pretty much / Very much. Þær eru ekki skoraðar og engin viðmið eru til, en svörin birtast í forritinu og skýrslunum.
+Ósvaraðar hömlunarlínur mega standa tómar ef spurninganúmer eru í dálki A.
+
+Ef svörin eru í línu 2 frá E til hægri (útflutningur úr Forms) er það greint sjálfkrafa. Flipinn **Svör** sýnir hverja
+spurningu með svarinu og reitnum sem það kom úr.
 
 Valfrjálst: ef **G1:G3** innihalda „Nafn“, „Aldur“ og „Kyn“ eru gildin í **H1:H3** lesin inn (kyn: Drengur/Stúlka).
 

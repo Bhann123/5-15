@@ -47,14 +47,27 @@ greint sjálfkrafa. Flipinn **Svör** sýnir hverja spurningu með svarinu og re
 | Skynjun | 43–60 | Rými og áttir 43–47, Tímaskyn 48–51, Eigin líkami 52–56, Form og myndir 57–60 |
 | Minni | 61–71 | |
 | Mál og tal | 72–92 | Skilningur 72–76, Máltjáning 77–89, Tjáskipti 90–92 |
-| Nám | 93–121 | Lestur og skrift 93–100, Reikningur 101–105, Almenn námsgeta 106–111, Að takast á við nám 112–121 |
+| Nám | 93–121 | Lestur og skrift 93–100, Reikningur 101–105, Almenn námsgeta 106–109, Að takast á við nám 112–121 |
 | Félagsfærni | 122–148 | |
 | Tilfinningar og hegðun | 149–181 | Innhverf einkenni 149–160, Úthverf hegðun 161–173, Áráttur/þráhyggja/kippir 174–181 |
 
 Skiptingin var sannreynd með dæminu í viðmiðunartöflunum (`docs/norms/`): öll gildi í „Result“-dálkinum fást
 nákvæmlega (t.d. Hreyfifærni 4/17 = 0,24, Stýrifærni 35/25 = 1,40, Tilfinningar og hegðun 6/33 = 0,18).
-Dæmið inniheldur engin svör við námssviðinu og því er ekki hægt að staðfesta þar hvort jákvætt orðuðu spurningarnar
-110 og 111 eigi að teljast með; í forritinu er hakbox til að taka þær út.
+Spurningar 110 og 111 lýsa styrkleikum og eru ekki skoraðar. Það sést á niðurstöðum frá 5-15.org: Almenn námsgeta
+tekur gildi í fjórðungum (4 spurningar) og Nám í 27-hlutum (27 spurningar).
+
+## Bera saman við niðurstöður frá 5-15.org
+
+Sæktu niðurstöðuskýrslur (PDF) úr aðgangi þínum á 5-15.org í eina möppu og keyrðu:
+
+```bash
+pip install pdfplumber
+python3 tools/verify_reports.py <mappa>
+```
+
+Fyrir hverja skýrslu er athugað að viðmiðin passi nákvæmlega við eina af átta töflum forritsins og að hver
+niðurstaða fáist með spurningaskiptingu forritsins (heil stig deilt með fjölda spurninga, aðalþáttur = vegið
+meðaltal undirþátta).
 
 ## Keyra og smíða
 

@@ -50,24 +50,21 @@ public static class Profile
 
 public sealed record ChildInfo(string Name, int Age, Sex Sex);
 
-public sealed record ScoringOptions(bool IncludePositiveItems = true);
-
-public sealed record Report(ChildInfo Child, AgeGroup Group, IReadOnlyList<ScaleResult> Results, QuestionnaireAnswers Answers, ScoringOptions Options);
+public sealed record Report(ChildInfo Child, AgeGroup Group, IReadOnlyList<ScaleResult> Results, QuestionnaireAnswers Answers);
 
 public static class Scorer
 {
     public const double MinPercentAnswered = 80;
 
-    public static Report Score(ChildInfo child, QuestionnaireAnswers answers, ScoringOptions? options = null)
+    public static Report Score(ChildInfo child, QuestionnaireAnswers answers)
     {
-        options ??= new ScoringOptions();
         var group = Norms.GroupForAge(child.Age)
             ?? throw new ArgumentOutOfRangeException(nameof(child), $"Viðmið eru aðeins til fyrir {Norms.MinAge}–{Norms.MaxAge} ára.");
 
         var results = Scales.All.Select(scale =>
         {
             var norm = Norms.Get(group, child.Sex, scale.Key);
-            var items = scale.Items.Where(i => options.IncludePositiveItems || !Scales.PositiveItems.Contains(i)).ToList();
+            var items = scale.Items;
             if (norm is not { IsAvailable: true })
                 return new ScaleResult(scale, null, 0, items.Count, norm);
 
@@ -76,7 +73,7 @@ public static class Scorer
             return new ScaleResult(scale, mean, scores.Count, items.Count, norm);
         }).ToList();
 
-        return new Report(child, group, results, answers, options);
+        return new Report(child, group, results, answers);
     }
 
     public static string Describe(Level level) => level switch

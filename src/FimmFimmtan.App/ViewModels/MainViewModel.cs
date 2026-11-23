@@ -25,7 +25,6 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private decimal? _age;
     [ObservableProperty] private bool _isMale;
     [ObservableProperty] private bool _isFemale;
-    [ObservableProperty] private bool _includePositiveItems = true;
     [ObservableProperty] private bool _showOnlyProblemAnswers;
 
     [ObservableProperty] private string? _fileName;
@@ -71,7 +70,6 @@ public partial class MainViewModel : ObservableObject
     partial void OnAgeChanged(decimal? value) => Recalculate();
     partial void OnIsMaleChanged(bool value) { if (value) IsFemale = false; Recalculate(); }
     partial void OnIsFemaleChanged(bool value) { if (value) IsMale = false; Recalculate(); }
-    partial void OnIncludePositiveItemsChanged(bool value) => Recalculate();
     partial void OnNameChanged(string value) => Recalculate();
     partial void OnShowOnlyProblemAnswersChanged(bool value) => RebuildAnswerRows();
 
@@ -203,8 +201,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        var report = Scorer.Score(new ChildInfo(Name.Trim(), age.Value, IsMale ? Sex.Male : Sex.Female), _answers,
-            new ScoringOptions(IncludePositiveItems));
+        var report = Scorer.Score(new ChildInfo(Name.Trim(), age.Value, IsMale ? Sex.Male : Sex.Female), _answers);
         foreach (var r in report.Results) Results.Add(new ResultRow(r));
         foreach (var r in Profile.Domains(report.Results)) DomainChart.Add(new ResultRow(r));
         foreach (var r in Profile.Subdomains(report.Results)) SubdomainChart.Add(new ResultRow(r));
@@ -229,5 +226,5 @@ public partial class MainViewModel : ObservableObject
     }
 
     private static string ScaleNameFor(int item) =>
-        Scales.All.Where(s => s.Items.Contains(item)).OrderBy(s => s.IsDomain).Select(s => s.NameIs).FirstOrDefault() ?? "";
+        Scales.All.Where(s => s.Items.Contains(item)).OrderBy(s => s.IsDomain).Select(s => s.NameIs).FirstOrDefault() ?? "Ekki skorað (styrkleiki)";
 }

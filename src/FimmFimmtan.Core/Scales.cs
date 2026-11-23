@@ -13,9 +13,13 @@ public sealed record Scale(string Key, string NameIs, string NameEn, IReadOnlyLi
 public static class Scales
 {
     public const int ItemCount = 181;
-    public static readonly int[] PositiveItems = [110, 111];
+    /// <summary>
+    /// Items 110 and 111 describe strengths and are not scored: in reports from 5-15.org General learning
+    /// takes values in quarters (4 items) and Learning in 27ths.
+    /// </summary>
+    public static readonly int[] UnscoredItems = [110, 111];
 
-    private static int[] R(int from, int to) => Enumerable.Range(from, to - from + 1).ToArray();
+    private static int[] R(int from, int to) => Enumerable.Range(from, to - from + 1).Except(UnscoredItems).ToArray();
 
     private static Scale D(string key, string nameIs, string nameEn, int from, int to) => new(key, nameIs, nameEn, R(from, to), true);
     private static Scale S(string key, string nameIs, string nameEn, int from, int to) => new(key, nameIs, nameEn, R(from, to), false);
@@ -48,7 +52,7 @@ public static class Scales
         D("learn", "Nám", "Learning", 93, 121),
         S("learn.reading", "Lestur og skrift", "Reading and writing", 93, 100),
         S("learn.arithmetic", "Reikningur", "Arithmetic", 101, 105),
-        S("learn.general", "Almenn námsgeta", "General learning", 106, 111),
+        S("learn.general", "Almenn námsgeta", "General learning", 106, 109),
         S("learn.coping", "Að takast á við nám", "Coping with learning", 112, 121),
 
         D("social", "Félagsfærni", "Social skills", 122, 148),

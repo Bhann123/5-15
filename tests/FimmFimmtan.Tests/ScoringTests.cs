@@ -73,6 +73,47 @@ public class ScoringTests
         }
     }
 
+    /// <summary>Case report from 5-15.org (8-11 years, female) that includes the Learning domain.</summary>
+    [Fact]
+    public void Reproduces_5_15_org_case_report_including_learning()
+    {
+        var sums = new Dictionary<string, int>
+        {
+            ["exec.attention"] = 12, ["exec.hyper"] = 13, ["exec.passivity"] = 6, ["exec.planning"] = 5,
+            ["perc.space"] = 1, ["perc.time"] = 1, ["perc.body"] = 1, ["memory"] = 6,
+            ["lang.comprehension"] = 3, ["lang.communication"] = 3,
+            ["learn.arithmetic"] = 1, ["learn.general"] = 1, ["learn.coping"] = 10,
+            ["emo.internal"] = 6, ["emo.acting"] = 11,
+        };
+        var expected = new Dictionary<string, double>
+        {
+            ["motor"] = 0.00, ["exec"] = 1.44, ["exec.attention"] = 1.33, ["exec.hyper"] = 1.44, ["exec.passivity"] = 1.50,
+            ["exec.planning"] = 1.67, ["perc"] = 0.17, ["perc.space"] = 0.20, ["perc.time"] = 0.25, ["perc.body"] = 0.20,
+            ["memory"] = 0.55, ["lang"] = 0.29, ["lang.comprehension"] = 0.60, ["lang.communication"] = 1.00,
+            ["learn"] = 0.44, ["learn.reading"] = 0.00, ["learn.arithmetic"] = 0.20, ["learn.general"] = 0.25,
+            ["learn.coping"] = 1.00, ["social"] = 0.00, ["emo"] = 0.52, ["emo.internal"] = 0.50, ["emo.acting"] = 0.85,
+            ["emo.obsessive"] = 0.00,
+        };
+        var scores = new int?[Scales.ItemCount + 1];
+        for (var i = 1; i <= Scales.ItemCount; i++) scores[i] = 0;
+        foreach (var scale in Scales.All.Where(s => sums.ContainsKey(s.Key)))
+        {
+            var remaining = sums[scale.Key];
+            foreach (var item in scale.Items)
+            {
+                var v = Math.Min(2, remaining);
+                scores[item] = v;
+                remaining -= v;
+            }
+        }
+        scores[110] = 2;
+        scores[111] = 2;
+
+        var report = Scorer.Score(new ChildInfo("Case", 9, Sex.Female), ToAnswers(scores));
+        foreach (var (key, value) in expected)
+            Assert.Equal(value, Math.Round(report.Results.Single(r => r.Scale.Key == key).Score!.Value, 2));
+    }
+
     [Fact]
     public void Flags_against_90th_and_98th_percentile()
     {

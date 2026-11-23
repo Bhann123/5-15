@@ -147,7 +147,7 @@ public static class PdfReportWriter
                 t.Span("Skorun: ").SemiBold();
                 t.Span("Á ekki við = 0, Á stundum/að nokkru leyti við = 1, Á við = 2. Niðurstaða hvers sviðs er meðaltal svaraðra spurninga á sviðinu. ");
                 t.Span("Niðurstaða við eða yfir 90. hundraðsmarki viðmiðunarhóps er merkt gul, við eða yfir 98. hundraðsmarki rauð.");
-                if (!report.Options.IncludePositiveItems) t.Span(" Spurningar 110 og 111 eru ekki taldar með.");
+                t.Span(" Spurningar 110 og 111 (styrkleikar) eru ekki skoraðar.");
             });
             if (report.Answers.Warnings.Count > 0)
                 col.Item().PaddingTop(6).Text("Athugasemdir við innlestur: " + string.Join(" ", report.Answers.Warnings)).FontColor("#9A3412");

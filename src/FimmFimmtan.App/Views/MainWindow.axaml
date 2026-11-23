@@ -92,9 +92,6 @@
                     <Border Classes="card">
                         <StackPanel Spacing="12">
                             <TextBlock Classes="h2" Text="3. Skýrsla" />
-                            <CheckBox IsChecked="{Binding IncludePositiveItems}">
-                                <TextBlock Text="Telja spurningar 110 og 111 með (jákvætt orðaðar, á sviðinu Almenn námsgeta)" TextWrapping="Wrap" FontSize="12" />
-                            </CheckBox>
                             <Grid ColumnDefinitions="*,10,*">
                                 <Button Grid.Column="0" Classes="primary" Content="Vista PDF" Command="{Binding ExportPdfCommand}"
                                         IsEnabled="{Binding CanExport}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,8" />
@@ -373,7 +370,7 @@
                                     <TextBlock Grid.Row="4" Text="Mál og tal 72–92" FontWeight="SemiBold" />
                                     <TextBlock Grid.Row="4" Grid.Column="1" Text="Skilningur á mæltu máli 72–76 · Máltjáning 77–89 · Tjáskipti 90–92" />
                                     <TextBlock Grid.Row="5" Text="Nám 93–121" FontWeight="SemiBold" />
-                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Lestur og skrift 93–100 · Reikningur 101–105 · Almenn námsgeta 106–111 · Að takast á við nám 112–121 (aðeins metið frá 8 ára aldri)" />
+                                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Lestur og skrift 93–100 · Reikningur 101–105 · Almenn námsgeta 106–109 · Að takast á við nám 112–121 (aðeins metið frá 8 ára aldri). Spurningar 110 og 111 lýsa styrkleikum og eru ekki skoraðar." />
                                     <TextBlock Grid.Row="6" Text="Félagsfærni 122–148" FontWeight="SemiBold" />
                                     <TextBlock Grid.Row="7" Text="Tilfinningar og hegðun 149–181" FontWeight="SemiBold" />
                                     <TextBlock Grid.Row="7" Grid.Column="1" Text="Innhverf einkenni 149–160 · Úthverf hegðun 161–173 · Áráttur, þráhyggja og kippir 174–181" />

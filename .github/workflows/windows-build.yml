@@ -30,6 +30,7 @@ jobs:
           New-Item -ItemType Directory -Force "dist/5-15 Skorun" | Out-Null
           Copy-Item "publish/win-x64/5-15 Skorun.exe" "dist/5-15 Skorun/"
           Copy-Item "samples/daemi_svor.xlsx" "dist/5-15 Skorun/Dæmi - svör foreldra.xlsx"
+          Copy-Item "samples/snidmat_svor.xlsx" "dist/5-15 Skorun/Sniðmát - autt.xlsx"
           Compress-Archive -Path "dist/5-15 Skorun" -DestinationPath "dist/5-15-Skorun-Windows.zip"
 
       - uses: actions/upload-artifact@v4

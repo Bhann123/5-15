@@ -15,7 +15,7 @@ skránni: „More info“ → „Run anyway“. Ný útgáfa er smíðuð sjálf
 ## Excel-skráin
 
 Svörin byrja í reit **E2** og halda áfram niður dálk E, eitt svar í línu, í röð spurninga 1–181
-(`samples/daemi_svor.xlsx` er dæmi). Leyfileg svör:
+(`samples/daemi_svor.xlsx` er útfyllt dæmi og `samples/snidmat_svor.xlsx` autt sniðmát með fellilistum í dálki E). Leyfileg svör:
 
 | Svar | Stig |
 | --- | --- |

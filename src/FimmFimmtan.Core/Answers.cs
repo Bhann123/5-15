@@ -33,7 +33,7 @@ public sealed class QuestionnaireAnswers
 public static class AnswerParser
 {
     public const string Option0 = "Á ekki við";
-    public const string Option1 = "Á stundum/að nokkru leyti við";
+    public const string Option1 = "Á stundum við";
     public const string Option2 = "Á við";
 
     private static readonly string[] ImpactOptions = ["alls ekki", "litid", "mikid", "mjog mikid"];

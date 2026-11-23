@@ -145,7 +145,7 @@ public static class PdfReportWriter
             col.Item().PaddingTop(12).Text(t =>
             {
                 t.Span("Skorun: ").SemiBold();
-                t.Span("Á ekki við = 0, Á stundum/að nokkru leyti við = 1, Á við = 2. Niðurstaða hvers sviðs er meðaltal svaraðra spurninga á sviðinu. ");
+                t.Span("Á ekki við = 0, Á stundum við = 1, Á við = 2. Niðurstaða hvers sviðs er meðaltal svaraðra spurninga á sviðinu. ");
                 t.Span("Niðurstaða við eða yfir 90. hundraðsmarki viðmiðunarhóps er merkt gul, við eða yfir 98. hundraðsmarki rauð.");
                 t.Span(" Spurningar 110 og 111 (styrkleikar) eru ekki skoraðar.");
             });

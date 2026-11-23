@@ -354,8 +354,8 @@
                                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                         <ToggleButton Classes="opt first" Content="Á ekki við" Width="92" IsChecked="{Binding Is0}"
                                                                       ToolTip.Tip="Á ekki við (0)" />
-                                                        <ToggleButton Classes="opt" Content="Á stundum" Width="92" Margin="-1,0,0,0" IsChecked="{Binding Is1}"
-                                                                      ToolTip.Tip="Á stundum/að nokkru leyti við (1)" />
+                                                        <ToggleButton Classes="opt" Content="Á stundum við" Width="104" Margin="-1,0,0,0" IsChecked="{Binding Is1}"
+                                                                      ToolTip.Tip="Á stundum við (1)" />
                                                         <ToggleButton Classes="opt last" Content="Á við" Width="70" Margin="-1,0,0,0" IsChecked="{Binding Is2}"
                                                                       ToolTip.Tip="Á við (2)" />
                                                     </StackPanel>
@@ -375,7 +375,7 @@
                             <StackPanel Spacing="12" Margin="14,10,14,20" MaxWidth="760" HorizontalAlignment="Left">
                                 <TextBlock Classes="h2" Text="Hvernig er skorað?" />
                                 <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
-                                           Text="Hver spurning fær stig eftir svari foreldris: „Á ekki við“ = 0, „Á stundum/að nokkru leyti við“ = 1 og „Á við“ = 2. Niðurstaða hvers undirsviðs er meðaltal stiga þeirra spurninga sem svarað var. Niðurstaða aðalsviðs (feitletrað) er meðaltal allra spurninga á sviðinu – ekki meðaltal undirsviðanna. Ósvaraðar spurningar og „óviðkomandi“ teljast ekki með; dálkurinn „Svarað“ sýnir hlutfall svaraðra spurninga." />
+                                           Text="Hver spurning fær stig eftir svari foreldris: „Á ekki við“ = 0, „Á stundum við“ = 1 og „Á við“ = 2. Niðurstaða hvers undirsviðs er meðaltal stiga þeirra spurninga sem svarað var. Niðurstaða aðalsviðs (feitletrað) er meðaltal allra spurninga á sviðinu – ekki meðaltal undirsviðanna. Ósvaraðar spurningar og „óviðkomandi“ teljast ekki með; dálkurinn „Svarað“ sýnir hlutfall svaraðra spurninga." />
                                 <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
                                            Text="Niðurstaðan er borin saman við viðmiðunarhóp eftir aldri (5–7, 8–11, 12–15, 16–17 ára) og kyni. Taflan sýnir miðgildi, meðaltal og staðalfrávik hópsins og þau gildi sem 90% og 98% barna í hópnum eru undir. Niðurstaða við eða yfir 90. hundraðsmarki er merkt gul og við eða yfir 98. hundraðsmarki rauð. Með því að halda músinni yfir línu sést z-gildi, þ.e. hve mörgum staðalfrávikum niðurstaðan er frá meðaltali." />
                                 <TextBlock Classes="h2" Text="Spurningar á hverju sviði" Margin="0,8,0,0" />

@@ -213,6 +213,8 @@ public class ScoringTests
     [InlineData("Á ekki við", 0)]
     [InlineData("á ekki við ", 0)]
     [InlineData("A ekki vid", 0)]
+    [InlineData("Á stundum við", 1)]
+    [InlineData("á stundum við ", 1)]
     [InlineData("Á stundum/ að nokkru leyti við", 1)]
     [InlineData("Á stundum / að nokkru leyti við", 1)]
     [InlineData("Á við", 2)]
@@ -229,7 +231,7 @@ public class ScoringTests
     public void Reads_answers_from_E2_downwards_and_skips_impact_answers()
     {
         var scores = ExampleScores();
-        string Text(int? s) => s switch { 0 => "Á ekki við", 1 => "Á stundum/ að nokkru leyti við", 2 => "Á við", _ => "" };
+        string Text(int? s) => s switch { 0 => "Á ekki við", 1 => "Á stundum við", 2 => "Á við", _ => "" };
 
         using var wb = new XLWorkbook();
         var ws = wb.AddWorksheet("Svör");

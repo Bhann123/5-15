@@ -23,10 +23,10 @@ Svörin byrja í reit **E2** og halda áfram niður dálk E, eitt svar í línu,
 | Svar | Stig |
 | --- | --- |
 | Á ekki við | 0 |
-| Á stundum/ að nokkru leyti við | 1 |
+| Á stundum við | 1 |
 | Á við | 2 |
 
-Einnig má nota 0, 1 og 2. Tóm reitur og „óviðkomandi“ teljast ósvaruð. Hástafir, bil og broddstafir skipta ekki máli.
+Einnig má nota 0, 1 og 2, og eldra orðalagið „Á stundum/ að nokkru leyti við“ er líka lesið sem 1. Tóm reitur og „óviðkomandi“ teljast ósvaruð. Hástafir, bil og broddstafir skipta ekki máli.
 Svör við spurningunum „Hamla erfiðleikar … í daglegu lífi“ (alls ekki / lítið / mikið / mjög mikið) eru þekkt og
 hliðra ekki númerun ef þau eru í dálkinum. Ef svörin eru í línu 2 frá E til hægri (útflutningur úr Forms) er það
 greint sjálfkrafa. Flipinn **Svör** sýnir hverja spurningu með svarinu og reitnum sem það kom úr.

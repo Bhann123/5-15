@@ -7,7 +7,7 @@ import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.worksheet.datavalidation import DataValidation
 
-OPTS = ["Á ekki við", "Á stundum/ að nokkru leyti við", "Á við"]
+OPTS = ["Á ekki við", "Á stundum við", "Á við"]
 texts = re.findall(r'^\s+"(.*)",$', open("src/FimmFimmtan.Core/ItemTexts.cs", encoding="utf-8").read(), re.M)
 assert len(texts) == 181
 

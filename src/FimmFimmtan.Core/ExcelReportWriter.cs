@@ -54,7 +54,7 @@ public static class ExcelReportWriter
         ws.Range(top + 1, 4, row, 4).Style.NumberFormat.Format = "0";
 
         row += 1;
-        ws.Cell(row++, 1).Value = "Skorun: Á ekki við = 0, Á stundum/að nokkru leyti við = 1, Á við = 2. Niðurstaða sviðs er meðaltal svaraðra spurninga.";
+        ws.Cell(row++, 1).Value = "Skorun: Á ekki við = 0, Á stundum við = 1, Á við = 2. Niðurstaða sviðs er meðaltal svaraðra spurninga.";
         ws.Cell(row++, 1).Value = "Niðurstaða við eða yfir 90. hundraðsmarki viðmiðunarhóps er merkt gul, við eða yfir 98. hundraðsmarki rauð.";
         ws.Cell(row++, 1).Value = "Spurningar 110 og 111 (styrkleikar) eru ekki skoraðar.";
         ws.Cell(row, 1).Value = "Listann má ekki nota einan og sér til að komast að greiningarniðurstöðu.";

@@ -95,5 +95,41 @@
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <Style Selector="ToggleButton.opt">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="0,5" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Foreground" Value="{StaticResource Text}" />
+        </Style>
+        <Style Selector="ToggleButton.opt.first">
+            <Setter Property="CornerRadius" Value="5,0,0,5" />
+        </Style>
+        <Style Selector="ToggleButton.opt.last">
+            <Setter Property="CornerRadius" Value="0,5,5,0" />
+        </Style>
+        <Style Selector="ToggleButton.opt:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#EEF3F8" />
+            <Setter Property="BorderBrush" Value="#94A3B8" />
+            <Setter Property="Foreground" Value="{StaticResource Text}" />
+        </Style>
+        <Style Selector="ToggleButton.opt:checked /template/ ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource Brand}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Brand}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="ToggleButton.opt:checked:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#174E75" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Border.answer">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.answer:focus-within">
+            <Setter Property="Background" Value="#EEF4FA" />
+        </Style>
     </Application.Styles>
 </Application>

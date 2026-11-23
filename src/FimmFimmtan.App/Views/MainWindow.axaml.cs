@@ -1,7 +1,11 @@
 using System.Diagnostics;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using FimmFimmtan.App.ViewModels;
 
 namespace FimmFimmtan.App.Views;
@@ -19,6 +23,37 @@ public partial class MainWindow : Window, IFileDialogs
         DragDrop.AddDragOverHandler(this, OnDragOver);
         DragDrop.AddDragLeaveHandler(this, (_, _) => DragOverlay.IsVisible = false);
         DragDrop.AddDropHandler(this, OnDrop);
+
+        AnswerList.AddHandler(KeyDownEvent, OnAnswerKeyDown, RoutingStrategies.Tunnel);
+        _vm.FocusAnswerRequested += index => Dispatcher.UIThread.Post(() => FocusAnswerRow(index), DispatcherPriority.Loaded);
+    }
+
+    private void OnAnswerKeyDown(object? sender, KeyEventArgs e)
+    {
+        if ((e.Source as Control)?.DataContext is not AnswerRow row) return;
+        var index = _vm.AnswerRows.IndexOf(row);
+        switch (e.Key)
+        {
+            case Key.D0 or Key.NumPad0: _vm.AnswerAndAdvance(row, 0); break;
+            case Key.D1 or Key.NumPad1: _vm.AnswerAndAdvance(row, 1); break;
+            case Key.D2 or Key.NumPad2: _vm.AnswerAndAdvance(row, 2); break;
+            case Key.Delete or Key.Back: _vm.AnswerAndAdvance(row, null); break;
+            case Key.Down when index + 1 < _vm.AnswerRows.Count: FocusAnswerRow(index + 1); break;
+            case Key.Up when index > 0: FocusAnswerRow(index - 1); break;
+            default: return;
+        }
+        e.Handled = true;
+    }
+
+    private void FocusAnswerRow(int index)
+    {
+        if (AnswerList.ContainerFromIndex(index) is not Control container) return;
+        var row = (AnswerRow)container.DataContext!;
+        var buttons = container.GetVisualDescendants().OfType<ToggleButton>().ToList();
+        if (buttons.Count == 0) return;
+        var target = row.Is1 ? buttons[1] : row.Is2 ? buttons[2] : buttons[0];
+        target.Focus(NavigationMethod.Tab);
+        container.BringIntoView(new Avalonia.Rect(0, -60, container.Bounds.Width, container.Bounds.Height + 120));
     }
 
     public MainViewModel ViewModel => _vm;
@@ -54,11 +89,11 @@ public partial class MainWindow : Window, IFileDialogs
         return files.FirstOrDefault()?.TryGetLocalPath();
     }
 
-    public async Task<string?> PickSavePathAsync(string suggestedName, string extension, string description)
+    public async Task<string?> PickSavePathAsync(string suggestedName, string extension, string description, string title = "Vista skýrslu")
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Vista skýrslu",
+            Title = title,
             SuggestedFileName = suggestedName,
             DefaultExtension = extension,
             FileTypeChoices = [new FilePickerFileType(description) { Patterns = [$"*.{extension}"] }],

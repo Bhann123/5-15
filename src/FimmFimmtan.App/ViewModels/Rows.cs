@@ -1,4 +1,5 @@
 using System.Globalization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using FimmFimmtan.Core;
 
 namespace FimmFimmtan.App.ViewModels;
@@ -40,15 +41,52 @@ public sealed class ResultRow(ScaleResult result)
         (result.Z is { } z ? $"\nz = {z.ToString("0.00", Is)} (frávik frá meðaltali í staðalfrávikum)" : "");
 }
 
-public sealed class AnswerRow(ItemAnswer answer, string scaleName)
+public sealed class AnswerRow(int item, string scaleName, Action<AnswerRow> changed) : ObservableObject
 {
-    public int Item => answer.Item;
-    public string Text => ItemTexts.Get(answer.Item);
+    private ItemAnswer _answer = AnswerParser.Manual(item, null);
+
+    public ItemAnswer Answer => _answer;
+    public int Item => item;
+    public string Text => ItemTexts.Get(item);
     public string ScaleName => scaleName;
-    public string Raw => answer.NotRelevant ? "Óviðkomandi" : string.IsNullOrWhiteSpace(answer.Raw) ? "Ekki svarað" : answer.Raw;
-    public string ScoreText => answer.Score?.ToString() ?? "–";
-    public string Cell => answer.SourceCell;
-    public bool IsMissing => answer.Score is null && !answer.Unrecognized;
-    public bool IsUnrecognized => answer.Unrecognized;
-    public bool IsAnswered => answer.Score is not null;
+    public bool IsScored => !Scales.UnscoredItems.Contains(item);
+
+    /// <summary>Shown under the question when the file held something other than one of the three answers.</summary>
+    public string? FileNote => _answer.NotRelevant ? $"Í skjali: „{_answer.Raw}“ (telst ekki með)"
+        : _answer.Unrecognized ? $"Í skjali: „{_answer.Raw}“ – ekki þekkt svar, telst ósvarað" : null;
+    public bool HasFileNote => FileNote != null;
+    public bool IsUnrecognized => _answer.Unrecognized;
+    public string Cell => _answer.SourceCell;
+    public bool IsAnswered => _answer.Score is not null;
+
+    public bool Is0 { get => _answer.Score == 0; set => Set(value, 0); }
+    public bool Is1 { get => _answer.Score == 1; set => Set(value, 1); }
+    public bool Is2 { get => _answer.Score == 2; set => Set(value, 2); }
+
+    public void Load(ItemAnswer answer)
+    {
+        _answer = answer;
+        RaiseAll();
+    }
+
+    public void SetScore(int? score)
+    {
+        if (_answer.Score == score && !_answer.Unrecognized && !_answer.NotRelevant) return;
+        _answer = AnswerParser.Manual(item, score);
+        RaiseAll();
+        changed(this);
+    }
+
+    private void Set(bool isChecked, int score)
+    {
+        if (isChecked) SetScore(score);
+        else if (_answer.Score == score) SetScore(null);
+    }
+
+    private void RaiseAll()
+    {
+        foreach (var name in new[] { nameof(Is0), nameof(Is1), nameof(Is2), nameof(FileNote), nameof(HasFileNote),
+                     nameof(IsUnrecognized), nameof(Cell), nameof(IsAnswered), nameof(Answer) })
+            OnPropertyChanged(name);
+    }
 }

@@ -9,7 +9,7 @@ namespace FimmFimmtan.App.ViewModels;
 public interface IFileDialogs
 {
     Task<string?> PickExcelFileAsync();
-    Task<string?> PickSavePathAsync(string suggestedName, string extension, string description);
+    Task<string?> PickSavePathAsync(string suggestedName, string extension, string description, string title = "Vista skýrslu");
     void OpenFile(string path);
 }
 
@@ -17,9 +17,21 @@ public partial class MainViewModel : ObservableObject
 {
     private static readonly CultureInfo Is = CultureInfo.GetCultureInfo("is-IS");
     private readonly IFileDialogs _dialogs;
-    private QuestionnaireAnswers? _answers;
+    private readonly AnswerRow[] _rows;
+    private IReadOnlyList<ImpactAnswer> _impact = [];
+    private List<string> _fileWarnings = [];
+    private bool _editedSinceLoad;
+    private bool _loadingRows;
 
-    public MainViewModel(IFileDialogs dialogs) => _dialogs = dialogs;
+    public MainViewModel(IFileDialogs dialogs)
+    {
+        _dialogs = dialogs;
+        _rows = Enumerable.Range(1, Scales.ItemCount).Select(i => new AnswerRow(i, ScaleNameFor(i), OnAnswerChanged)).ToArray();
+        RebuildAnswerRows();
+    }
+
+    /// <summary>Raised when the view should move keyboard focus to an answer row (index into <see cref="AnswerRows"/>).</summary>
+    public event Action<int>? FocusAnswerRequested;
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanExport))] private string _name = "";
     [ObservableProperty] private decimal? _age;
@@ -33,11 +45,18 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private string? _lastExportPath;
+    [ObservableProperty] private int _selectedTab;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(ClearButtonText))] private bool _confirmClear;
+
+    public string ClearButtonText => ConfirmClear ? "Staðfesta hreinsun" : "Hreinsa svör";
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(HasReport), nameof(CanExport), nameof(ReportHeading), nameof(FlaggedSummary))]
     private Report? _report;
 
-    [ObservableProperty] private string? _missingInputMessage = "Fylltu inn aldur og kyn barnsins og hladdu inn Excel-skrá með svörum foreldra.";
+    [ObservableProperty] private string? _missingInputMessage = NothingYetMessage;
+
+    private const string NothingYetMessage = "Fylltu inn aldur og kyn barnsins og hladdu inn Excel-skrá með svörum foreldra eða svaraðu spurningunum í flipanum „Svör“.";
+    public const int AnswersTabIndex = 2;
 
     public ObservableCollection<ResultRow> Results { get; } = [];
     public ObservableCollection<ResultRow> DomainChart { get; } = [];
@@ -46,11 +65,14 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<string> Warnings { get; } = [];
 
     public bool HasReport => Report != null;
-    public bool HasFile => _answers != null;
+    public bool HasFile => FileName != null;
+    public int AnsweredCount => _rows.Count(r => r.IsAnswered);
+    public bool HasAnyAnswer => _rows.Any(r => r.IsAnswered || r.IsUnrecognized);
     public bool HasWarnings => Warnings.Count > 0;
-    public bool HasAnswers => AnswerRows.Count > 0;
     public bool CanExport => Report != null;
-    public string AnswersTabHeader => _answers is null ? "Svör" : $"Svör ({_answers.AnsweredCount}/{Scales.ItemCount})";
+    public string AnswersTabHeader => $"Svör ({AnsweredCount}/{Scales.ItemCount})";
+    public string AnswerProgress => $"{AnsweredCount} af {Scales.ItemCount} spurningum svarað";
+    public double AnswerProgressValue => AnsweredCount;
 
     public string? ReportHeading => Report is null ? null :
         $"{(string.IsNullOrWhiteSpace(Report.Child.Name) ? "Barn" : Report.Child.Name)} · {Report.Child.Age} ára · borið saman við {Norms.Label(Report.Group)} {Norms.Label(Report.Child.Sex)}";
@@ -84,27 +106,26 @@ public partial class MainViewModel : ObservableObject
     {
         LoadError = null;
         StatusMessage = null;
+        ConfirmClear = false;
         IsLoading = true;
         try
         {
             var answers = await Task.Run(() => ExcelAnswerReader.Read(path));
-            _answers = answers;
+            SetAnswers(answers);
             FileName = Path.GetFileName(path);
-            var impact = answers.Impact.Count > 0 ? $" · {answers.Impact.Count} svör um hömlun í daglegu lífi" : "";
-            FileDetails = $"{answers.AnsweredCount} af {Scales.ItemCount} spurningum svarað{impact}";
+            if (answers.ChildName is { } childName && string.IsNullOrWhiteSpace(Name)) Name = childName;
+            if (answers.ChildAge is { } childAge && Age is null) Age = childAge;
+            if (answers.ChildSex is { } childSex && !IsMale && !IsFemale)
+            {
+                if (childSex == Sex.Male) IsMale = true; else IsFemale = true;
+            }
         }
         catch (IOException ex) when (ex is not FileNotFoundException)
         {
-            _answers = null;
-            FileName = null;
-            FileDetails = null;
             LoadError = "Ekki tókst að opna skrána. Er hún opin í Excel? Lokaðu henni og reyndu aftur.";
         }
         catch (Exception ex)
         {
-            _answers = null;
-            FileName = null;
-            FileDetails = null;
             LoadError = ex is InvalidDataException
                 ? ex.Message
                 : $"Ekki tókst að lesa skrána sem Excel-skjal (.xlsx). {ex.Message}";
@@ -113,24 +134,116 @@ public partial class MainViewModel : ObservableObject
         {
             IsLoading = false;
         }
-        OnPropertyChanged(nameof(HasFile));
-        OnPropertyChanged(nameof(AnswersTabHeader));
+        AnswersChanged();
+    }
+
+    private void SetAnswers(QuestionnaireAnswers answers)
+    {
+        _loadingRows = true;
+        foreach (var row in _rows) row.Load(answers.Items[row.Item - 1]);
+        _loadingRows = false;
+        _impact = answers.Impact;
+        _fileWarnings = answers.Warnings.ToList();
+        _editedSinceLoad = false;
         RebuildAnswerRows();
+    }
+
+    private void OnAnswerChanged(AnswerRow row)
+    {
+        if (_loadingRows) return;
+        _editedSinceLoad = true;
+        ConfirmClear = false;
+        _fileWarnings.Clear();
+        AnswersChanged();
+    }
+
+    private void AnswersChanged()
+    {
+        OnPropertyChanged(nameof(HasFile));
+        OnPropertyChanged(nameof(HasAnyAnswer));
+        OnPropertyChanged(nameof(AnsweredCount));
+        OnPropertyChanged(nameof(AnswersTabHeader));
+        OnPropertyChanged(nameof(AnswerProgress));
+        OnPropertyChanged(nameof(AnswerProgressValue));
+        if (FileName != null)
+        {
+            var impact = _impact.Count > 0 ? $" · {_impact.Count} svör um hömlun í daglegu lífi" : "";
+            FileDetails = _editedSinceLoad ? $"{AnswerProgress} · breytt í forritinu" : AnswerProgress + impact;
+        }
         Recalculate();
     }
 
-    [RelayCommand]
-    private void ClearFile()
+    private QuestionnaireAnswers BuildAnswers()
     {
-        _answers = null;
+        var source = FileName is null ? "Svarað í forritinu"
+            : _editedSinceLoad ? $"{FileName} (breytt í forritinu)" : FileName;
+        var answers = new QuestionnaireAnswers { Items = _rows.Select(r => r.Answer).ToList(), Impact = _impact, SourceDescription = source };
+        answers.Warnings.AddRange(_fileWarnings);
+        return answers;
+    }
+
+    [RelayCommand]
+    private void ClearAnswers()
+    {
+        if (_editedSinceLoad && !ConfirmClear)
+        {
+            ConfirmClear = true;
+            return;
+        }
+        ResetAnswers();
+    }
+
+    private void ResetAnswers()
+    {
+        ConfirmClear = false;
         FileName = null;
         FileDetails = null;
         LoadError = null;
-        OnPropertyChanged(nameof(HasFile));
-        OnPropertyChanged(nameof(AnswersTabHeader));
-        RebuildAnswerRows();
-        Recalculate();
+        SetAnswers(AnswerParser.Empty());
+        AnswersChanged();
     }
+
+    [RelayCommand]
+    private void AnswerInApp()
+    {
+        SelectedTab = AnswersTabIndex;
+        var first = AnswerRows.ToList().FindIndex(r => !r.IsAnswered);
+        FocusAnswerRequested?.Invoke(first < 0 ? 0 : first);
+    }
+
+    [RelayCommand]
+    private async Task SaveAnswersAsync()
+    {
+        if (!HasAnyAnswer) return;
+        var safeName = string.Concat((string.IsNullOrWhiteSpace(Name) ? "barn" : Name.Trim()).Split(Path.GetInvalidFileNameChars()));
+        var suggested = $"5-15 svör {safeName} {DateTime.Today.ToString("yyyy-MM-dd", Is)}.xlsx";
+        var path = await _dialogs.PickSavePathAsync(suggested, "xlsx", "Excel-skjal", "Vista svör");
+        if (path is null) return;
+        try
+        {
+            var answers = BuildAnswers();
+            var child = CurrentChild();
+            await Task.Run(() => ExcelAnswerWriter.Write(answers, child, path));
+            LastExportPath = path;
+            StatusMessage = $"Svör vistuð: {Path.GetFileName(path)}";
+        }
+        catch (Exception ex)
+        {
+            LastExportPath = null;
+            StatusMessage = $"Ekki tókst að vista svörin: {ex.Message}";
+        }
+    }
+
+    /// <summary>Answers the given row and moves focus to the next one, for fast entry from a paper form.</summary>
+    public void AnswerAndAdvance(AnswerRow row, int? score)
+    {
+        row.SetScore(score);
+        var index = AnswerRows.IndexOf(row);
+        if (score is not null && index >= 0 && index + 1 < AnswerRows.Count) FocusAnswerRequested?.Invoke(index + 1);
+    }
+
+    private ChildInfo? CurrentChild() =>
+        Age is { } a && (IsMale || IsFemale) ? new ChildInfo(Name.Trim(), (int)a, IsMale ? Sex.Male : Sex.Female) : null;
 
     [RelayCommand]
     private void NewChild()
@@ -141,7 +254,8 @@ public partial class MainViewModel : ObservableObject
         IsFemale = false;
         StatusMessage = null;
         LastExportPath = null;
-        ClearFile();
+        ResetAnswers();
+        SelectedTab = 0;
     }
 
     [RelayCommand]
@@ -186,27 +300,28 @@ public partial class MainViewModel : ObservableObject
 
         var age = Age is { } a ? (int)a : (int?)null;
         string? missing = null;
-        if (_answers is null) missing = "Hladdu inn Excel-skrá með svörum foreldra (svörin byrja í reit E2 og halda áfram niður).";
+        if (!HasAnyAnswer) missing = "Hladdu inn Excel-skrá með svörum foreldra eða svaraðu spurningunum í flipanum „Svör“.";
         if (!IsMale && !IsFemale) missing = "Veldu kyn barnsins – viðmiðin eru ólík fyrir drengi og stúlkur.";
         if (age is null) missing = "Sláðu inn aldur barnsins (5–17 ára).";
         else if (Norms.GroupForAge(age.Value) is null) missing = $"Viðmið eru aðeins til fyrir {Norms.MinAge}–{Norms.MaxAge} ára börn.";
-        if (_answers is null && age is null && !IsMale && !IsFemale)
-            missing = "Fylltu inn aldur og kyn barnsins og hladdu inn Excel-skrá með svörum foreldra.";
+        if (!HasAnyAnswer && age is null && !IsMale && !IsFemale)
+            missing = NothingYetMessage;
 
         MissingInputMessage = missing;
-        if (missing != null || _answers is null || age is null)
+        if (missing != null || age is null)
         {
             Report = null;
             OnPropertyChanged(nameof(HasWarnings));
             return;
         }
 
-        var report = Scorer.Score(new ChildInfo(Name.Trim(), age.Value, IsMale ? Sex.Male : Sex.Female), _answers);
+        var answers = BuildAnswers();
+        var report = Scorer.Score(new ChildInfo(Name.Trim(), age.Value, IsMale ? Sex.Male : Sex.Female), answers);
         foreach (var r in report.Results) Results.Add(new ResultRow(r));
         foreach (var r in Profile.Domains(report.Results)) DomainChart.Add(new ResultRow(r));
         foreach (var r in Profile.Subdomains(report.Results)) SubdomainChart.Add(new ResultRow(r));
-        foreach (var w in _answers.Warnings) Warnings.Add(w);
-        if (report.Group == AgeGroup.Age5_7 && _answers.Items.Skip(92).Take(29).Any(i => i.Score.HasValue))
+        foreach (var w in answers.Warnings) Warnings.Add(w);
+        if (report.Group == AgeGroup.Age5_7 && answers.Items.Skip(92).Take(29).Any(i => i.Score.HasValue))
             Warnings.Add("Spurningum um nám (93–121) var svarað, en engin viðmið eru til fyrir 5–7 ára og námssviðið er því ekki metið.");
         var few = report.Results.Where(r => r.FewAnswers).Select(r => r.Scale.NameIs).ToList();
         if (few.Count > 0)
@@ -218,11 +333,9 @@ public partial class MainViewModel : ObservableObject
     private void RebuildAnswerRows()
     {
         AnswerRows.Clear();
-        if (_answers is not null)
-            foreach (var a in _answers.Items)
-                if (!ShowOnlyProblemAnswers || a.Score is null)
-                    AnswerRows.Add(new AnswerRow(a, ScaleNameFor(a.Item)));
-        OnPropertyChanged(nameof(HasAnswers));
+        foreach (var row in _rows)
+            if (!ShowOnlyProblemAnswers || !row.IsAnswered)
+                AnswerRows.Add(row);
     }
 
     private static string ScaleNameFor(int item) =>

@@ -293,4 +293,22 @@ public class ScoringTests
         Assert.Equal(Scales.ItemCount, answers.Items.Count);
         Assert.Contains(answers.Warnings, w => w.Contains("Aðeins 50"));
     }
+
+    [Fact]
+    public void Saved_answers_load_back_with_child_details()
+    {
+        var scores = ExampleScores();
+        scores[5] = null;
+        var original = ToAnswers(scores);
+        var path = Path.Combine(Directory.CreateTempSubdirectory().FullName, "svor.xlsx");
+
+        ExcelAnswerWriter.Write(original, new ChildInfo("Anna Jónsdóttir", 12, Sex.Female), path);
+        var loaded = ExcelAnswerReader.Read(path);
+
+        Assert.Empty(loaded.Warnings);
+        Assert.Equal(original.Items.Select(i => i.Score), loaded.Items.Select(i => i.Score));
+        Assert.Equal("Anna Jónsdóttir", loaded.ChildName);
+        Assert.Equal(12, loaded.ChildAge);
+        Assert.Equal(Sex.Female, loaded.ChildSex);
+    }
 }

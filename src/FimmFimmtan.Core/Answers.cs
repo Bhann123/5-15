@@ -21,6 +21,11 @@ public sealed class QuestionnaireAnswers
     public List<string> Warnings { get; } = [];
     public string SourceDescription { get; init; } = "";
 
+    /// <summary>Child details found next to the answers in a file saved by this program, if any.</summary>
+    public string? ChildName { get; set; }
+    public int? ChildAge { get; set; }
+    public Sex? ChildSex { get; set; }
+
     public int? ScoreOf(int item) => item >= 1 && item <= Items.Count ? Items[item - 1].Score : null;
     public int AnsweredCount => Items.Count(i => i.Score.HasValue);
 }
@@ -32,6 +37,23 @@ public static class AnswerParser
     public const string Option2 = "Á við";
 
     private static readonly string[] ImpactOptions = ["alls ekki", "litid", "mikid", "mjog mikid"];
+
+    public static string Label(int score) => score switch
+    {
+        0 => Option0,
+        1 => Option1,
+        2 => Option2,
+        _ => throw new ArgumentOutOfRangeException(nameof(score)),
+    };
+
+    public static ItemAnswer Manual(int item, int? score) =>
+        new(item, score, score is { } s ? Label(s) : "", false, false, "");
+
+    public static QuestionnaireAnswers Empty(string sourceDescription = "") => new()
+    {
+        Items = Enumerable.Range(1, Scales.ItemCount).Select(i => Manual(i, null)).ToList(),
+        SourceDescription = sourceDescription,
+    };
 
     /// <summary>Folds Icelandic letters to ASCII and normalises spacing so minor variations in the export still match.</summary>
     public static string Normalize(string s)

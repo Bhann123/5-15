@@ -8,7 +8,10 @@ niðurstöðurnar saman við viðmið eftir aldri og kyni.
 skránni: „More info“ → „Run anyway“. Ný útgáfa er smíðuð sjálfkrafa við hverja breytingu á `main`.
 
 1. Sláðu inn nafn, aldur (5–17 ára) og kyn barns.
-2. Hladdu inn Excel-skrá (.xlsx) með svörum foreldra – með hnappnum eða með því að draga skrána inn í gluggann.
+2. Hladdu inn Excel-skrá (.xlsx) með svörum foreldra – með hnappnum eða með því að draga skrána inn í gluggann –
+   eða smelltu á **Svara í forritinu** og svaraðu í flipanum „Svör“. Þar má smella á svar eða ýta á 0, 1 eða 2
+   (bendillinn færist þá á næstu spurningu; örvar færa, Delete hreinsar). Innlesnum svörum má líka breyta.
+   **Vista svör…** vistar svörin (og nafn, aldur og kyn) sem Excel-skrá á sama sniði, sem má hlaða inn aftur.
 3. Niðurstöður birtast strax: niðurstaða hvers sviðs og undirsviðs, viðmið (miðgildi, meðaltal, staðalfrávik,
    90% og 98%), myndrænt snið og mat. Vista má skýrslu sem PDF eða Excel.
 

@@ -105,21 +105,30 @@ def check(path, tables, counts):
         problems.append(("norms", best, f"viðmið passa ekki við neina töflu; næst {best}, munur á: {', '.join(diffs)}"))
         group = best + " (?)"
 
+    def n_answered(key):
+        """Number of answered items, from the % Ans. column (scores are the mean of answered items only)."""
+        return round(answered[key] * counts[key] / 100)
+
     for key, n in counts.items():
+        if answered[key] > 0 and abs(answered[key] * n / 100 - n_answered(key)) > 0.01:
+            problems.append(("items", key, f"{key}: {answered[key]:.2f}% svarað passar ekki við {n} spurningar"))
+            continue
         if "." not in key and any(k.startswith(key + ".") for k in counts):
             continue
-        if answered[key] < 100:
+        m = n_answered(key)
+        if m == 0:
             continue
-        k = round(result[key] * n)
-        if abs(k / n - result[key]) > TOLERANCE:
-            problems.append(("items", key, f"{key} = {result[key]:.2f} er ekki heil stig deilt með {n} spurningum"))
+        if abs(round(result[key] * m) / m - result[key]) > TOLERANCE:
+            problems.append(("items", key, f"{key} = {result[key]:.2f} er ekki heil stig deilt með {m} svöruðum spurningum"))
     for dom in [k for k in counts if "." not in k]:
         subs = [k for k in counts if k.startswith(dom + ".")]
-        if not subs or any(answered[s] < 100 for s in subs + [dom]):
+        m = n_answered(dom)
+        if not subs or m == 0:
             continue
-        total = sum(Fraction(round(result[s] * counts[s]), 1) for s in subs)
-        if abs(float(total / counts[dom]) - result[dom]) > TOLERANCE:
-            problems.append(("domain", dom, f"{dom} = {result[dom]:.2f} en undirþættir gefa {float(total / counts[dom]):.2f}"))
+        total = sum(Fraction(round(result[s] * n_answered(s)), 1) for s in subs)
+        expected = float(total / m)
+        if sum(n_answered(s) for s in subs) != m or abs(expected - result[dom]) > TOLERANCE:
+            problems.append(("domain", dom, f"{dom} = {result[dom]:.2f} en undirþættir gefa {expected:.2f}"))
     return problems, group, info
 
 
@@ -182,7 +191,7 @@ def summarize(results, tables, counts, out):
     if item_vals:
         p("\nSvið þar sem niðurstaða passar ekki við fjölda spurninga:")
         for key, vals in sorted(item_vals.items(), key=lambda x: -len(x[1])):
-            all_vals = [r[3]["result"][key] for r in results if key in r[3]["result"] and r[3]["answered"].get(key) == 100]
+            all_vals = [r[3]["result"][key] for r in results if r[3]["answered"].get(key) == 100]
             p(f"  {key}: {len(vals)} skýrslur; forritið notar {counts[key]} spurningar; "
               f"gildi sem passa ekki: {sorted(set(vals))[:12]}; mögulegur fjöldi spurninga: {possible_item_counts(all_vals)[:6]}")
 
@@ -192,7 +201,7 @@ def summarize(results, tables, counts, out):
 
     partial = Counter(key for r in results for key, a in r[3]["answered"].items() if 0 < a < 100)
     if partial:
-        p("\nSvið með ófullkomnum svörum (ekki athuguð): " + ", ".join(f"{k} ({c})" for k, c in partial.most_common(8)))
+        p("\nSvið með ósvöruðum spurningum (athuguð miðað við svaraðar spurningar): " + ", ".join(f"{k} ({c})" for k, c in partial.most_common(8)))
 
 
 def main(args):

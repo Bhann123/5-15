@@ -7,10 +7,13 @@ For each report it checks that
   * every result can be produced with the app's item counts: each subdomain score is k/n for a whole number k
     of points over its n items, and each domain score equals the item-weighted mean of its subdomains.
 """
-import glob, os, re, sys
+import glob, logging, os, re, sys
 from collections import Counter, defaultdict
 from fractions import Fraction
 import pdfplumber
+
+# pdfminer warns about fonts without a FontBBox in 5-15.org reports; it does not affect the extracted text.
+logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 KEYS = {

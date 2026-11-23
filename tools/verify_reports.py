@@ -29,6 +29,8 @@ KEYS = {
 }
 # Result, % Ans. and 2–5 norm columns: reports from 5-15.org often cut the table at the page margin so that only
 # Median and Mid. v. remain.
+# Scores are printed with two decimals, so 1/8 = 0.125 may appear as 0.13: allow the full half-unit plus float noise.
+TOLERANCE = 0.0051
 ROW = re.compile(r"^(.*?)((?:\s+[\d.]+){4,7})$")
 
 
@@ -55,6 +57,21 @@ def same(app_norm, report_norm):
     return tuple(app_norm[:len(report_norm)]) == tuple(report_norm)
 
 
+def describe_unreadable(text, norms):
+    """Describes why the table was not found without quoting any of the report's text."""
+    if len(norms) > 0:
+        missing = sorted(set(KEYS.values()) - set(norms))
+        return f"fann {len(norms)} af {len(KEYS)} línum; vantar {', '.join(missing)}"
+    if len(text.strip()) < 50:
+        return "enginn texti í PDF-skránni (líklega skönnuð mynd eða prentað í PDF sem mynd)"
+    labels = [name for name in KEYS if name in text]
+    header = "Subdomain" in text or "Result" in text
+    numbers = len(re.findall(r"\d+[.,]\d\d", text))
+    comma = len(re.findall(r"\d+,\d\d", text))
+    return (f"texti til staðar en taflan þekkist ekki: {len(labels)} af {len(KEYS)} sviðsheitum (ensk), "
+            f"fyrirsögn {'fannst' if header else 'fannst ekki'}, {numbers} tölur ({comma} með kommu)")
+
+
 def informant(text):
     for word, label in (("Teacher", "kennari"), ("Self", "sjálfsmat"), ("Parent", "foreldri")):
         if re.search(r"\b%s\b" % word, text):
@@ -75,8 +92,7 @@ def check(path, tables, counts):
             norms[key] = tuple(nums[2:])
     info = {"informant": informant(text), "norms": norms, "result": result, "answered": answered}
     if len(norms) != len(KEYS):
-        missing = sorted(set(KEYS.values()) - set(norms))
-        return [("parse", None, f"fann {len(norms)} af {len(KEYS)} línum; vantar {', '.join(missing)}")], "?", info
+        return [("parse", None, describe_unreadable(text, norms))], "?", info
 
     problems = []
     group = next((g for g, t in tables.items() if all(same(t[k], v) for k, v in norms.items() if any(v))), None)
@@ -92,21 +108,21 @@ def check(path, tables, counts):
         if answered[key] < 100:
             continue
         k = round(result[key] * n)
-        if abs(k / n - result[key]) > 0.005:
+        if abs(k / n - result[key]) > TOLERANCE:
             problems.append(("items", key, f"{key} = {result[key]:.2f} er ekki heil stig deilt með {n} spurningum"))
     for dom in [k for k in counts if "." not in k]:
         subs = [k for k in counts if k.startswith(dom + ".")]
         if not subs or any(answered[s] < 100 for s in subs + [dom]):
             continue
         total = sum(Fraction(round(result[s] * counts[s]), 1) for s in subs)
-        if abs(float(total / counts[dom]) - result[dom]) > 0.005:
+        if abs(float(total / counts[dom]) - result[dom]) > TOLERANCE:
             problems.append(("domain", dom, f"{dom} = {result[dom]:.2f} en undirþættir gefa {float(total / counts[dom]):.2f}"))
     return problems, group, info
 
 
 def possible_item_counts(values):
     """Item counts n (1..40) for which every observed score is a whole number of points divided by n."""
-    return [n for n in range(1, 41) if all(abs(round(v * n) / n - v) <= 0.005 for v in values)]
+    return [n for n in range(1, 41) if all(abs(round(v * n) / n - v) <= TOLERANCE for v in values)]
 
 
 def summarize(results, tables, counts, out):

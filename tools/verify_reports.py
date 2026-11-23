@@ -27,7 +27,9 @@ KEYS = {
     "Social skills": "social", "Emotional/behavioral difficulties": "emo",
     "Internalisation": "emo.internal", "Acting out": "emo.acting", "Obsessive actions or thoughts": "emo.obsessive",
 }
-ROW = re.compile(r"^(.*?)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)$")
+# Result, % Ans. and 2–5 norm columns: reports from 5-15.org often cut the table at the page margin so that only
+# Median and Mid. v. remain.
+ROW = re.compile(r"^(.*?)((?:\s+[\d.]+){4,7})$")
 
 
 def load_norms():
@@ -48,6 +50,11 @@ def load_item_counts():
     return counts
 
 
+def same(app_norm, report_norm):
+    """Compares the norm columns the report shows (it may only show Median and Mid. v.)."""
+    return tuple(app_norm[:len(report_norm)]) == tuple(report_norm)
+
+
 def informant(text):
     for word, label in (("Teacher", "kennari"), ("Self", "sjálfsmat"), ("Parent", "foreldri")):
         if re.search(r"\b%s\b" % word, text):
@@ -63,19 +70,19 @@ def check(path, tables, counts):
         m = ROW.match(line.strip())
         if m and m.group(1).strip() in KEYS:
             key = KEYS[m.group(1).strip()]
-            result[key] = float(m.group(2))
-            answered[key] = float(m.group(3))
-            norms[key] = tuple(float(x) for x in m.groups()[3:])
+            nums = [float(x) for x in m.group(2).split()]
+            result[key], answered[key] = nums[0], nums[1]
+            norms[key] = tuple(nums[2:])
     info = {"informant": informant(text), "norms": norms, "result": result, "answered": answered}
     if len(norms) != len(KEYS):
         missing = sorted(set(KEYS.values()) - set(norms))
         return [("parse", None, f"fann {len(norms)} af {len(KEYS)} línum; vantar {', '.join(missing)}")], "?", info
 
     problems = []
-    group = next((g for g, t in tables.items() if all(t[k] == v for k, v in norms.items() if any(v))), None)
+    group = next((g for g, t in tables.items() if all(same(t[k], v) for k, v in norms.items() if any(v))), None)
     if group is None:
-        best = min(tables, key=lambda g: sum(tables[g][k] != v for k, v in norms.items()))
-        diffs = [k for k, v in norms.items() if tables[best][k] != v and any(v)]
+        best = min(tables, key=lambda g: sum(not same(tables[g][k], v) for k, v in norms.items()))
+        diffs = [k for k, v in norms.items() if not same(tables[best][k], v) and any(v)]
         problems.append(("norms", best, f"viðmið passa ekki við neina töflu; næst {best}, munur á: {', '.join(diffs)}"))
         group = best + " (?)"
 
@@ -139,13 +146,13 @@ def summarize(results, tables, counts, out):
         p(f"\nÓþekkt viðmiðasett: {len(unknown)} ólík sett")
         for i, (fp, rs) in enumerate(sorted(unknown.items(), key=lambda x: -len(x[1])), 1):
             norms = dict(fp)
-            best = min(tables, key=lambda g: sum(tables[g][k] != v for k, v in norms.items()))
+            best = min(tables, key=lambda g: sum(not same(tables[g][k], v) for k, v in norms.items()))
             inf = Counter(r[3]["informant"] for r in rs)
             p(f"\n  Sett {i}: {len(rs)} skýrslur ({', '.join(f'{k} {v}' for k, v in inf.items())}), næst töflu {best}")
             p(f"  {'svið':<22} {'Median':>6} {'Mean':>6} {'SD':>6} {'98%':>6} {'90%':>6}   forrit ({best})")
             for key in KEYS.values():
                 v, t = norms[key], tables[best][key]
-                mark = "" if v == t else "   <-- " + " ".join(f"{x:.2f}" for x in t)
+                mark = "" if same(t, v) else "   <-- " + " ".join(f"{x:.2f}" for x in t[:len(v)])
                 p(f"  {key:<22} " + " ".join(f"{x:6.2f}" for x in v) + mark)
 
     item_vals = defaultdict(list)

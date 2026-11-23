@@ -114,6 +114,45 @@ public class ScoringTests
             Assert.Equal(value, Math.Round(report.Results.Single(r => r.Scale.Key == key).Score!.Value, 2));
     }
 
+    /// <summary>Second case report from 5-15.org (8-11 years, male), table cut to Median and Mid. v. columns.</summary>
+    [Fact]
+    public void Reproduces_second_5_15_org_case_report()
+    {
+        var sums = new Dictionary<string, int>
+        {
+            ["motor.gross"] = 2, ["motor.fine"] = 2, ["exec.attention"] = 16, ["exec.hyper"] = 14, ["exec.passivity"] = 5,
+            ["exec.planning"] = 6, ["perc.body"] = 2, ["memory"] = 7, ["lang.comprehension"] = 3, ["lang.expressive"] = 2,
+            ["lang.communication"] = 1, ["learn.reading"] = 6, ["learn.arithmetic"] = 2, ["learn.general"] = 2,
+            ["learn.coping"] = 15, ["social"] = 26, ["emo.internal"] = 12, ["emo.acting"] = 11, ["emo.obsessive"] = 2,
+        };
+        var expected = new Dictionary<string, double>
+        {
+            ["motor"] = 0.24, ["motor.gross"] = 0.29, ["motor.fine"] = 0.20, ["exec"] = 1.64, ["exec.attention"] = 1.78,
+            ["exec.hyper"] = 1.56, ["exec.passivity"] = 1.25, ["exec.planning"] = 2.00, ["perc"] = 0.11, ["perc.body"] = 0.40,
+            ["memory"] = 0.64, ["lang"] = 0.29, ["lang.comprehension"] = 0.60, ["lang.expressive"] = 0.15,
+            ["lang.communication"] = 0.33, ["learn"] = 0.93, ["learn.reading"] = 0.75, ["learn.arithmetic"] = 0.40,
+            ["learn.general"] = 0.50, ["learn.coping"] = 1.50, ["social"] = 0.96, ["emo"] = 0.76, ["emo.internal"] = 1.00,
+            ["emo.acting"] = 0.85, ["emo.obsessive"] = 0.25,
+        };
+        var scores = new int?[Scales.ItemCount + 1];
+        for (var i = 1; i <= Scales.ItemCount; i++) scores[i] = 0;
+        foreach (var scale in Scales.All.Where(s => sums.ContainsKey(s.Key)))
+        {
+            var remaining = sums[scale.Key];
+            foreach (var item in scale.Items)
+            {
+                var v = Math.Min(2, remaining);
+                scores[item] = v;
+                remaining -= v;
+            }
+        }
+
+        var report = Scorer.Score(new ChildInfo("Case", 10, Sex.Male), ToAnswers(scores));
+        foreach (var (key, value) in expected)
+            Assert.Equal(value, Math.Round(report.Results.Single(r => r.Scale.Key == key).Score!.Value, 2));
+        Assert.Equal((0.07, 0.16), (report.Results.Single(r => r.Scale.Key == "motor").Norm!.Median, report.Results.Single(r => r.Scale.Key == "motor").Norm!.Mean));
+    }
+
     [Fact]
     public void Flags_against_90th_and_98th_percentile()
     {

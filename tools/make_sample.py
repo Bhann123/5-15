@@ -1,19 +1,21 @@
 """Creates example parent-answer workbooks in samples/: a filled-in example and a blank template.
 
-Answers go in column E from E2 downwards (question 1-181), which is what the app reads.
+Same layout as the 5-15.org export (id, type, number, label, answer): answers 0-2 in column E, the ten
+"Hamla ... í daglegu lífi?" questions (0-3) on their own rows, and a text row before question 93.
 """
 import random, re
 import openpyxl
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Font, PatternFill
 from openpyxl.worksheet.datavalidation import DataValidation
 
-OPTS = ["Á ekki við", "Á stundum við", "Á við"]
 texts = re.findall(r'^\s+"(.*)",$', open("src/FimmFimmtan.Core/ItemTexts.cs", encoding="utf-8").read(), re.M)
 assert len(texts) == 181
-IMPACT_OPTS = ["Alls ekki", "Lítið", "Mikið", "Mjög mikið"]
 impact = {int(after): (int(num), text) for num, after, text in
           re.findall(r'new\((\d+), (\d+), "\w+", "(.*?)",', open("src/FimmFimmtan.Core/ImpactQuestions.cs", encoding="utf-8").read())}
 assert len(impact) == 10
+NOTE = "Ef barnið er yngra en 8 ára vinsamlegast svarið spurningu 131 næst:"
+LABELS = ["Á ekki við", "Á stundum við", "Á við"]
+IMPACT_LABELS = ["Alls ekki", "Lítið", "Mikið", "Mjög mikið"]
 
 SECTIONS = [(1, "Grófhreyfingar"), (8, "Fínhreyfingar"), (18, "Athygli og einbeiting"), (27, "Ofvirkni og hvatvísi"),
             (36, "Vanvirkni og drifleysi"), (40, "Skipulag og áætlanagerð"), (43, "Skynjun á rými og áttum"),
@@ -27,53 +29,61 @@ def section(i):
     return [name for start, name in SECTIONS if start <= i][-1]
 
 
-def workbook(answers, impact_answers=None, child=("", "", "")):
+def workbook(answers=None, impact_answers=None, child=None):
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Svör"
-    for col, h in zip("ABCDE", ["Nr.", "Spurning", "Svið", "", "Svar"]):
-        ws[f"{col}1"] = h
-        ws[f"{col}1"].font = Font(bold=True, color="FFFFFF")
-        ws[f"{col}1"].fill = PatternFill("solid", fgColor="0F3D5E")
-    dv = DataValidation(type="list", formula1='"' + ",".join(OPTS) + '"', allow_blank=True)
-    ws.add_data_validation(dv)
-    idv = DataValidation(type="list", formula1='"' + ",".join(IMPACT_OPTS) + '"', allow_blank=True)
-    ws.add_data_validation(idv)
+    ws.title = "5-15 Norrænn spurningalisti"
+    for col, h in enumerate(["id", "type", "number", "label", "answer", "svar"], start=1):
+        ws.cell(1, col, h).font = Font(bold=True)
+    items_dv = DataValidation(type="list", formula1='"0,1,2"', allow_blank=True)
+    impact_dv = DataValidation(type="list", formula1='"0,1,2,3"', allow_blank=True)
+    ws.add_data_validation(items_dv)
+    ws.add_data_validation(impact_dv)
+    answer_fill = PatternFill("solid", fgColor="FFF8E1")
+    impact_fill = PatternFill("solid", fgColor="EEF4FA")
+
     row = 1
-    for i, t in enumerate(texts, start=1):
+
+    def add(id_, type_, label):
+        nonlocal row
         row += 1
-        ws.cell(row, 1, i)
-        ws.cell(row, 2, t).alignment = Alignment(wrap_text=True, vertical="top")
-        ws.cell(row, 3, section(i))
+        for col, v in enumerate([id_, type_, row - 1, label], start=1):
+            ws.cell(row, col, v)
+
+    for i, text in enumerate(texts, start=1):
+        if i == 93:
+            add("", "textbox", NOTE)
+            for col in range(1, 7):
+                ws.cell(row, col).font = Font(color="64748B")
+        add(f"q{i}", "checkbox", text)
         e = ws.cell(row, 5, answers[i - 1] if answers else None)
-        e.fill = PatternFill("solid", fgColor="FFF8E1")
-        dv.add(e)
+        e.fill = answer_fill
+        items_dv.add(e)
+        if answers:
+            ws.cell(row, 6, LABELS[answers[i - 1]])
         if i in impact:
-            num, text = impact[i]
-            row += 1
-            for col, value in [(1, f"H{num}"), (2, text), (3, "Hömlun í daglegu lífi")]:
-                c = ws.cell(row, col, value)
-                c.font = Font(italic=True, color="0F3D5E")
-                c.fill = PatternFill("solid", fgColor="EEF4FA")
-            ws.cell(row, 2).alignment = Alignment(wrap_text=True, vertical="top")
+            num, q = impact[i]
+            add(f"h{num}", "checkbox", q)
             e = ws.cell(row, 5, impact_answers[num - 1] if impact_answers else None)
-            e.fill = PatternFill("solid", fgColor="E3EDF7")
-            idv.add(e)
-    ws.column_dimensions["A"].width = 6
-    ws.column_dimensions["B"].width = 80
-    ws.column_dimensions["C"].width = 26
-    ws.column_dimensions["D"].width = 2
-    ws.column_dimensions["E"].width = 32
-    for row, (label, value) in enumerate(zip(["Nafn", "Aldur", "Kyn"], child), start=1):
-        ws.cell(row, 7, label).font = Font(bold=True)
-        ws.cell(row, 8, value if value != "" else None).fill = PatternFill("solid", fgColor="FFF8E1")
+            impact_dv.add(e)
+            if impact_answers:
+                ws.cell(row, 6, IMPACT_LABELS[impact_answers[num - 1]])
+            for col in range(1, 7):
+                ws.cell(row, col).fill = impact_fill
+                ws.cell(row, col).font = Font(italic=True)
+
+    note = ws.cell(1, 8, "Svör: 0 = Á ekki við, 1 = Á stundum við, 2 = Á við. "
+                         "Hömlun í daglegu lífi: 0 = Alls ekki, 1 = Lítið, 2 = Mikið, 3 = Mjög mikið.")
+    note.font = Font(italic=True, color="64748B")
+    for r, (label, value) in enumerate(zip(["Nafn", "Aldur", "Kyn"], child or ("", "", "")), start=3):
+        ws.cell(r, 8, label).font = Font(bold=True)
+        ws.cell(r, 9, value if value != "" else None).fill = answer_fill
     sex = DataValidation(type="list", formula1='"Drengur,Stúlka"', allow_blank=True)
     ws.add_data_validation(sex)
-    sex.add("H3")
-    ws["G5"] = "Valfrjálst: nafn, aldur og kyn fyllast sjálfkrafa út í forritinu."
-    ws["G5"].font = Font(italic=True, color="64748B")
-    ws.column_dimensions["G"].width = 8
-    ws.column_dimensions["H"].width = 22
+    sex.add("I5")
+
+    for col, width in zip("ABCDEFGHI", [6, 10, 8, 80, 8, 16, 2, 8, 22]):
+        ws.column_dimensions[col].width = width
     ws.freeze_panes = "A2"
     return wb
 
@@ -85,8 +95,8 @@ weights = {
     "Skipulag og áætlanagerð": [0.2, 0.5, 0.3], "Úthverf hegðun": [0.45, 0.4, 0.15],
     "Að takast á við nám": [0.35, 0.45, 0.2], "Minni": [0.6, 0.35, 0.05],
 }
-answers = [random.choices(OPTS, weights.get(section(i), [0.85, 0.13, 0.02]))[0] for i in range(1, 182)]
-impact_answers = ["Alls ekki", "Mikið", "Lítið", "Mikið", "Alls ekki", "Lítið", "Alls ekki", "Mikið", "Lítið", "Mikið"]
+answers = [random.choices([0, 1, 2], weights.get(section(i), [0.85, 0.13, 0.02]))[0] for i in range(1, 182)]
+impact_answers = [0, 2, 1, 2, 0, 1, 0, 2, 1, 2]
 workbook(answers, impact_answers, ("Dæmi Dæmason", 9, "Drengur")).save("samples/daemi_svor.xlsx")
-workbook(None).save("samples/snidmat_svor.xlsx")
+workbook().save("samples/snidmat_svor.xlsx")
 print("ok")

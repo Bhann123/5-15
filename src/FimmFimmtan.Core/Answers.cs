@@ -105,10 +105,11 @@ public static class AnswerParser
         return ImpactOptions.TryGetValue(n, out var level) ? new(CellKind.Impact, level, raw) : new(CellKind.Unknown, null, raw);
     }
 
-    private static bool IsImpactText(string text)
+    /// <summary>True for the "Hamla/Hafa ... í daglegu lífi?" questions (and their English versions), not item 26 "gleymið í daglegu lífi".</summary>
+    public static bool IsImpactQuestion(string text)
     {
         var n = Normalize(text);
-        return n.Contains("daglegu lifi") || n.Contains("daily function");
+        return (n.Contains("daglegu lifi") && (n.StartsWith("haml") || n.StartsWith("hafa"))) || n.Contains("interfere");
     }
 
     /// <summary>
@@ -142,6 +143,56 @@ public static class AnswerParser
             items.Add(new(items.Count + 1, p.Score, raw.Trim(), p.Kind == CellKind.Unknown, p.IsNotRelevant, cell));
         }
 
+        return Finish(items, impact, unknown, misplacedImpact, sourceDescription);
+    }
+
+    /// <summary>
+    /// Maps rows from an export that has a question-text column (e.g. the 5-15.org export with the columns
+    /// id, type, number, label, answer). Rows whose text is a daily-function question become impact answers and
+    /// text/heading rows are skipped, so neither shifts the item numbering. The export's own "number" column counts
+    /// those rows too and is therefore not used.
+    /// </summary>
+    public static QuestionnaireAnswers MapLabeled(IReadOnlyList<(string Type, string Label, string Raw, string Cell)> rows, string sourceDescription)
+    {
+        var items = new List<ItemAnswer>();
+        var impact = new List<ImpactAnswer>();
+        var unknown = 0;
+        var misplacedImpact = 0;
+        foreach (var (type, label, raw, cell) in rows)
+        {
+            var t = Normalize(type);
+            if (t.Contains("text") || t.Contains("head") || t.Contains("info") || t.Contains("comment")) continue;
+            if (label.Trim().Length == 0 && raw.Trim().Length == 0) continue;
+            if (IsImpactQuestion(label))
+            {
+                var level = ParseImpact(raw);
+                if (level.Kind == CellKind.Empty) continue;
+                if (ImpactQuestions.AfterItem(items.Count) is { } q && impact.All(i => i.Question != q.Number))
+                {
+                    if (level.Kind == CellKind.Unknown) unknown++;
+                    impact.Add(new(q.Number, level.Score, raw.Trim(), cell));
+                }
+                else
+                {
+                    misplacedImpact++;
+                }
+                continue;
+            }
+            var p = Parse(raw);
+            var bad = p.Kind is CellKind.Unknown or CellKind.Impact;
+            if (items.Count >= Scales.ItemCount)
+            {
+                if (p.Kind != CellKind.Empty) items.Add(new(items.Count + 1, null, raw, true, false, cell));
+                continue;
+            }
+            if (bad) unknown++;
+            items.Add(new(items.Count + 1, bad ? null : p.Score, raw.Trim(), bad, p.IsNotRelevant, cell));
+        }
+        return Finish(items, impact, unknown, misplacedImpact, sourceDescription);
+    }
+
+    private static QuestionnaireAnswers Finish(List<ItemAnswer> items, List<ImpactAnswer> impact, int unknown, int misplacedImpact, string sourceDescription)
+    {
         var extra = items.Count - Scales.ItemCount;
         var padded = items.Take(Scales.ItemCount).ToList();
         for (var i = padded.Count + 1; i <= Scales.ItemCount; i++) padded.Add(new(i, null, "", false, false, ""));
@@ -183,7 +234,7 @@ public static class AnswerParser
             }
 
             var q = ImpactQuestions.ByKey(k);
-            if (q is null && (IsImpactText(text) || Parse(raw).Kind == CellKind.Impact)) q = ImpactQuestions.AfterItem(lastItem);
+            if (q is null && (IsImpactQuestion(text) || Parse(raw).Kind == CellKind.Impact)) q = ImpactQuestions.AfterItem(lastItem);
             if (q is null) continue;
             var level = ParseImpact(raw);
             if (level.Kind == CellKind.Empty) continue;

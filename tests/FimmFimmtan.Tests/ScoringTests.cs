@@ -382,4 +382,37 @@ public class ScoringTests
         Assert.Empty(answers.Impact);
         Assert.Contains(answers.Warnings, w => w.Contains("hömlun"));
     }
+
+    [Fact]
+    public void Reads_the_5_15_org_export_with_type_number_label_answer_columns()
+    {
+        var scores = ExampleScores();
+        using var wb = new XLWorkbook();
+        var ws = wb.AddWorksheet("5-15 Norrænn spurningalisti...");
+        string[] headers = ["id", "type", "number", "label", "answer"];
+        for (var c = 0; c < headers.Length; c++) ws.Cell(1, c + 1).Value = headers[c];
+        var row = 2;
+        void Add(string type, string label, int? answer)
+        {
+            ws.Cell(row, 1).Value = Guid.NewGuid().ToString();
+            ws.Cell(row, 2).Value = type;
+            ws.Cell(row, 3).Value = row - 1;
+            ws.Cell(row, 4).Value = label;
+            if (answer is { } a) ws.Cell(row, 5).Value = a;
+            row++;
+        }
+        for (var i = 1; i <= Scales.ItemCount; i++)
+        {
+            if (i == 93) Add("textbox", "Ef barnið er yngra en 8 ára vinsamlegast svarið spurningu 131 næst:", null);
+            Add("checkbox", ItemTexts.Get(i), scores[i]);
+            if (ImpactQuestions.AfterItem(i) is { } q) Add("checkbox", q.TextIs, q.Number % 3);
+        }
+
+        var answers = ExcelAnswerReader.Read(wb, "Jón Jónsson - 5-15 Norrænn spurningalisti fyrir foreldra.xlsx");
+
+        Assert.Empty(answers.Warnings);
+        Assert.Equal(scores.Skip(1), answers.Items.Select(i => i.Score));
+        Assert.Equal(ImpactQuestions.All.Select(q => (int?)(q.Number % 3)), answers.Impact.Select(i => i.Level));
+        Assert.Equal("Jón Jónsson", answers.ChildName);
+    }
 }
